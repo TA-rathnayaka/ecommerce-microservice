@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from "react";
+import toast from "../utils/toast";
 import {
   onRemoveFromWishlist,
   onViewProfile,
@@ -11,354 +12,325 @@ import { AddressComponent } from "../components/Address-comp";
 import { CartItem } from "../components/Cart-comp";
 import { WishItem } from "../components/Wishlist-comp";
 import { OrderItem } from "../components/Order-comp";
-
 import { useAppDispatch, useAppSelector } from "../store/hooks";
 
-//load Shopping profile
+// Icons
+const CartTabIcon = () => (
+  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+    <circle cx="9" cy="21" r="1"/><circle cx="20" cy="21" r="1"/>
+    <path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6"/>
+  </svg>
+);
+const HeartTabIcon = () => (
+  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+    <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/>
+  </svg>
+);
+const OrdersTabIcon = () => (
+  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+    <line x1="8" y1="6" x2="21" y2="6"/><line x1="8" y1="12" x2="21" y2="12"/><line x1="8" y1="18" x2="21" y2="18"/>
+    <line x1="3" y1="6" x2="3.01" y2="6"/><line x1="3" y1="12" x2="3.01" y2="12"/><line x1="3" y1="18" x2="3.01" y2="18"/>
+  </svg>
+);
+const AddressIcon = () => (
+  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+    <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/>
+    <circle cx="12" cy="10" r="3"/>
+  </svg>
+);
+const GiftIcon = () => (
+  <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+    <polyline points="20 12 20 22 4 22 4 12"/>
+    <rect x="2" y="7" width="20" height="5"/>
+    <line x1="12" y1="22" x2="12" y2="7"/>
+    <path d="M12 7H7.5a2.5 2.5 0 0 1 0-5C11 2 12 7 12 7z"/>
+    <path d="M12 7h4.5a2.5 2.5 0 0 0 0-5C13 2 12 7 12 7z"/>
+  </svg>
+);
+const UserCircleIcon = () => (
+  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+    <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/>
+    <circle cx="12" cy="7" r="4"/>
+  </svg>
+);
+
+const TABS = [
+  { key: "cart",     label: "Cart",     Icon: CartTabIcon },
+  { key: "wishlist", label: "Wishlist", Icon: HeartTabIcon },
+  { key: "orders",   label: "Orders",   Icon: OrdersTabIcon },
+  { key: "address",  label: "Address",  Icon: AddressIcon },
+];
 
 const Profile = () => {
-  const { user, wishlist, cart, orders, address } = useAppSelector(
-    (state) => state.userReducer
-  );
+  const { user, wishlist, cart, orders, address } = useAppSelector((state) => state.userReducer);
   const dispatch = useAppDispatch();
 
-  const [street, setStreet] = useState();
-  const [city, setCity] = useState();
-  const [state, setState] = useState();
-  const [postalCode, setPostalCode] = useState();
-  const [country, setCountry] = useState();
+  const [activeTab, setActiveTab] = useState("cart");
+  const [street, setStreet]       = useState("");
+  const [city, setCity]           = useState("");
+  const [state, setState]         = useState("");
+  const [postalCode, setPostal]   = useState("");
+  const [country, setCountry]     = useState("");
 
-  const { id, token } = user;
+  const { token } = user;
 
   useEffect(() => {
-    if (token) {
-      dispatch(onViewProfile());
-    }
-  }, [token]);
+    if (token) dispatch(onViewProfile());
+  }, [token, dispatch]);
 
-  const onAdd = ({ _id, qty }) => {
-    console.log(_id, qty);
-
-    dispatch(onAddToCart({ _id, qty: qty }));
-  };
-
-  const onRemove = ({ _id }) => {
-    dispatch(onRemoveFromCart(_id));
-  };
+  const onAdd    = ({ _id, qty }) => dispatch(onAddToCart({ _id, qty }));
+  const onRemove = ({ _id })      => dispatch(onRemoveFromCart(_id));
 
   const removeFromWishlist = (_id) => {
     dispatch(onRemoveFromWishlist(_id));
-  };
-
-  const viewCart = () => {
-    if (Array.isArray(cart) && cart.length) {
-      return (
-        <div>
-          {cart.map((item) => {
-            if (item) {
-              return (
-                <CartItem
-                  cart={cart}
-                  item={item}
-                  onAdd={onAdd}
-                  onRemove={onRemove}
-                />
-              );
-            }
-          })}
-        </div>
-      );
-    } else {
-      return (
-        <div
-          className="d-flex justify-content-center align-items-center"
-          style={{ height: "20rem" }}
-        >
-          <span className="text-secondary"> Your Cart is Empty!</span>
-        </div>
-      );
-    }
-  };
-
-  const viewWishlist = () => {
-    if (Array.isArray(wishlist) && wishlist.length) {
-      return (
-        <div>
-          {wishlist.map((item) => {
-            return <WishItem item={item} onTapRemove={removeFromWishlist} />;
-          })}
-        </div>
-      );
-    } else {
-      return (
-        <div
-          className="d-flex justify-content-center align-items-center"
-          style={{ height: "20rem" }}
-        >
-          <span className="text-secondary"> Your Wishlist is Empty!</span>
-        </div>
-      );
-    }
-  };
-
-  const viewOrders = () => {
-    if (Array.isArray(orders) && orders.length) {
-      return (
-        <div>
-          {orders.map((item) => {
-            return <OrderItem item={item} onTapViewMore={() => {}} />;
-          })}
-        </div>
-      );
-    } else {
-      return (
-        <div
-          className="d-flex justify-content-center align-items-center"
-          style={{ height: "20rem" }}
-        >
-          <span className="text-secondary"> Your Order List is Empty!</span>
-        </div>
-      );
-    }
-  };
-
-  const onTapPlaceOrder = () => {
-    // Perform Payment
-    dispatch(onPlaceOrder({ txnId: "72365ffdds" }));
-  };
-
-  const viewPlaceOrder = () => {
-    if (Array.isArray(cart) && cart.length) {
-      let totalAmount = 0;
-
-      cart.map(({ unit, product }) => {
-        totalAmount += unit * product.price;
-      });
-
-      return (
-        <div className="row bg-white" style={{ height: "5rem" }}>
-          <div className="col-3">
-            <span style={{ fontSize: "1.2rem" }}>
-              {" "}
-              Total Amount:{" "}
-              <span
-                className="ml-2"
-                style={{ fontSize: "1.2rem", fontWeight: "bold" }}
-              >
-                {totalAmount}
-              </span>
-            </span>
-          </div>
-          <div className="col-3 ml-auto">
-            <button
-              className="btn btn-lg - btn-danger"
-              onClick={() => onTapPlaceOrder()}
-            >
-              <i className="fas fa-gift mr-2"></i> Place Order
-            </button>
-          </div>
-        </div>
-      );
-    }
+    toast("Removed from wishlist", { icon: "💔" });
   };
 
   const addNewAddress = () => {
-    dispatch(
-      onCreateAddress({
-        street,
-        postalCode,
-        city,
-        country,
-      })
-    );
-  };
-
-  const handleAddress = () => {
-    if (Array.isArray(address) && address.length) {
-      return (
-        <div className="row">
-          <div className="col-12">
-            <h1> Shopping Profile </h1>
-          </div>
-          <div className="col" style={{ height: "15rem" }}>
-            <label>Your Delivery Address </label>
-            <AddressComponent address={address} />
-          </div>
-        </div>
-      );
-    } else {
-      return (
-        <div className="row">
-          <form className="m-2 bg-white p-2 mt-3 ml-3 rounded">
-            <div class="form-row">
-              <div class="form-group col-md-6">
-                <label for="inputAddress">Street</label>
-                <input
-                  type="text"
-                  onChange={(e) => setStreet(e.target.value)}
-                  class="form-control"
-                  id="inputAddress"
-                  placeholder="1234 Main St"
-                />
-              </div>
-              <div class="form-group col-md-4">
-                <label for="inputCity">City</label>
-                <input
-                  type="text"
-                  onChange={(e) => setCity(e.target.value)}
-                  class="form-control"
-                  id="inputCity"
-                />
-              </div>
-            </div>
-
-            <div class="form-row">
-              <div class="form-group col-md-3">
-                <label for="inputCity">State</label>
-                <input
-                  type="text"
-                  onChange={(e) => setState(e.target.value)}
-                  class="form-control"
-                  id="inputCity"
-                />
-              </div>
-              <div class="form-group col-md-2">
-                <label for="inputZip">Postal Code</label>
-                <input
-                  type="text"
-                  onChange={(e) => setPostalCode(e.target.value)}
-                  class="form-control"
-                  id="inputZip"
-                />
-              </div>
-              <div class="form-group col-md-2">
-                <label for="inputZip">Country</label>
-                <input
-                  type="text"
-                  onChange={(e) => setCountry(e.target.value)}
-                  class="form-control"
-                  id="inputZip"
-                />
-              </div>
-            </div>
-            <div className="row">
-              <button
-                class="btn btn-warning ml-auto mr-4"
-                onClick={() => addNewAddress()}
-                type="button"
-              >
-                Save Address
-              </button>
-            </div>
-          </form>
-        </div>
-      );
+    if (!street || !city || !country) {
+      toast.error("Please fill in at least street, city and country.");
+      return;
     }
+    dispatch(onCreateAddress({ street, postalCode, city, country }));
+    toast.success("Address saved!");
   };
 
-  const shoppingProfile = () => {
-    return (
-      <div className="container">
-        {handleAddress()}
+  const onTapPlaceOrder = () => {
+    dispatch(onPlaceOrder({ txnId: "TXN-" + Date.now() }));
+    toast.success("Order placed successfully! 🎉");
+  };
 
-        <div
-          className="row bg-white"
-          style={{
-            borderTopLeftRadius: 10,
-            borderTopRightRadius: 10,
-            padding: 10,
-          }}
-        >
+  /* ── Cart total ── */
+  const cartTotal = Array.isArray(cart)
+    ? cart.reduce((sum, { unit, product }) => sum + unit * product.price, 0)
+    : 0;
+
+  /* ── Tab content ── */
+  const renderCart = () => (
+    Array.isArray(cart) && cart.length
+      ? cart.map((item, i) => item && (
+          <CartItem key={i} cart={cart} item={item} onAdd={onAdd} onRemove={onRemove} />
+        ))
+      : <div className="empty-state"><span className="empty-icon">🛒</span><p>Your cart is empty.</p></div>
+  );
+
+  const renderWishlist = () => (
+    Array.isArray(wishlist) && wishlist.length
+      ? wishlist.map((item, i) => <WishItem key={i} item={item} onTapRemove={removeFromWishlist} />)
+      : <div className="empty-state"><span className="empty-icon">💛</span><p>Your wishlist is empty.</p></div>
+  );
+
+  const renderOrders = () => (
+    Array.isArray(orders) && orders.length
+      ? orders.map((item, i) => <OrderItem key={i} item={item} onTapViewMore={() => {}} />)
+      : <div className="empty-state"><span className="empty-icon">📦</span><p>No orders yet.</p></div>
+  );
+
+  const renderAddress = () => (
+    Array.isArray(address) && address.length
+      ? <AddressComponent address={address} />
+      : (
+        <div style={addressFormWrap}>
+          <h3 style={formTitle}>Add Delivery Address</h3>
+          <div style={formGrid}>
+            <div className="input-group" style={{ gridColumn: "1/-1" }}>
+              <span className="input-icon"><AddressIcon /></span>
+              <input className="input-field" placeholder="Street address" value={street} onChange={e => setStreet(e.target.value)} />
+            </div>
+            <div className="input-group">
+              <span className="input-icon">🏙</span>
+              <input className="input-field" placeholder="City" value={city} onChange={e => setCity(e.target.value)} />
+            </div>
+            <div className="input-group">
+              <span className="input-icon">🗺</span>
+              <input className="input-field" placeholder="State" value={state} onChange={e => setState(e.target.value)} />
+            </div>
+            <div className="input-group">
+              <span className="input-icon">📮</span>
+              <input className="input-field" placeholder="Postal code" value={postalCode} onChange={e => setPostal(e.target.value)} />
+            </div>
+            <div className="input-group">
+              <span className="input-icon">🌍</span>
+              <input className="input-field" placeholder="Country" value={country} onChange={e => setCountry(e.target.value)} />
+            </div>
+          </div>
+          <button className="btn btn-primary" onClick={addNewAddress} style={{ marginTop: 8 }}>
+            Save Address
+          </button>
+        </div>
+      )
+  );
+
+  const tabContent = {
+    cart: renderCart,
+    wishlist: renderWishlist,
+    orders: renderOrders,
+    address: renderAddress,
+  };
+
+  return (
+    <div style={pageStyle}>
+      {/* ── Profile Header ── */}
+      <div style={profileHeaderStyle}>
+        <div style={avatarStyle}><UserCircleIcon /></div>
+        <div>
+          <h2 style={{ fontSize: "1.25rem", fontWeight: 800, color: "var(--text-primary)", margin: 0 }}>My Account</h2>
+          <p style={{ fontSize: "0.875rem", color: "var(--text-muted)", margin: "4px 0 0" }}>
+            {Array.isArray(cart) ? cart.length : 0} cart items · {Array.isArray(orders) ? orders.length : 0} orders
+          </p>
+        </div>
+      </div>
+
+      {/* ── Tab Bar ── */}
+      <div style={tabBarStyle}>
+        {TABS.map(({ key, label, Icon }) => (
+          <button
+            key={key}
+            style={tabBtnStyle(activeTab === key)}
+            onClick={() => setActiveTab(key)}
+          >
+            <Icon />
+            <span>{label}</span>
+            {key === "cart" && Array.isArray(cart) && cart.length > 0 && (
+              <span style={tabCountBadge}>{cart.length}</span>
+            )}
+          </button>
+        ))}
+      </div>
+
+      {/* ── Tab Content ── */}
+      <div style={contentArea}>
+        {tabContent[activeTab]?.()}
+      </div>
+
+      {/* ── Order Bar ── (only when cart has items) */}
+      {activeTab === "cart" && Array.isArray(cart) && cart.length > 0 && (
+        <div style={orderBarStyle}>
           <div>
-            <p
-              className="ml-3 my-2 mb-5"
-              style={{ color: "#4179CF", fontSize: "2rem" }}
-            >
-              {" "}
-              Shopping Cart
+            <p style={{ fontSize: "0.8rem", color: "var(--text-muted)", margin: 0 }}>Total</p>
+            <p style={{ fontSize: "1.5rem", fontWeight: 900, color: "var(--accent-light)", margin: "2px 0 0" }}>
+              ₹{cartTotal}
             </p>
           </div>
-          <div className="col-12">
-            <nav>
-              <div className="nav nav-tabs" id="nav-tab" role="tablist">
-                <a
-                  className="nav-link active"
-                  style={{ color: "#3680B4" }}
-                  id="nav-cart-tab"
-                  data-toggle="tab"
-                  href="#nav-cart"
-                  role="tab"
-                  aria-controls="nav-cart"
-                  aria-selected="true"
-                >
-                  <i className="fas fa-shopping-cart mr-3"></i>Cart
-                </a>
-                <a
-                  className="nav-link"
-                  style={{ color: "#3680B4" }}
-                  id="nav-wishlist-tab"
-                  data-toggle="tab"
-                  href="#nav-wishlist"
-                  role="tab"
-                  aria-controls="nav-wishlist"
-                  aria-selected="false"
-                >
-                  <i className="fas fa-heart mr-3"></i>Wishlist
-                </a>
-                <a
-                  className="nav-link"
-                  style={{ color: "#3680B4" }}
-                  id="nav-orders-tab"
-                  data-toggle="tab"
-                  href="#nav-orders"
-                  role="tab"
-                  aria-controls="nav-orders"
-                  aria-selected="false"
-                >
-                  <i className="fas fa-list-alt mr-3"></i>Orders
-                </a>
-              </div>
-            </nav>
-          </div>
+          <button
+            className="btn btn-primary btn-lg"
+            style={{ paddingLeft: 36, paddingRight: 36 }}
+            onClick={onTapPlaceOrder}
+          >
+            <GiftIcon /> Place Order
+          </button>
         </div>
-        <div
-          className="row bg-white"
-          style={{ minHeight: "40rem", padding: 20 }}
-        >
-          <div className="tab-content container-fluid" id="nav-tabContent">
-            <div
-              className="tab-pane fade show active"
-              id="nav-cart"
-              role="tabpanel"
-              aria-labelledby="nav-cart-tab"
-            >
-              {cart && viewCart()}
-            </div>
-            <div
-              className="tab-pane fade"
-              id="nav-wishlist"
-              role="tabpanel"
-              aria-labelledby="nav-wishlist-tab"
-            >
-              {wishlist && viewWishlist()}
-            </div>
-            <div
-              className="tab-pane fade"
-              id="nav-orders"
-              role="tabpanel"
-              aria-labelledby="nav-orders-tab"
-            >
-              {orders && viewOrders()}
-            </div>
-          </div>
-        </div>
-
-        {viewPlaceOrder()}
-      </div>
-    );
-  };
-
-  return <div className="container-fluid">{shoppingProfile()}</div>;
+      )}
+    </div>
+  );
 };
 
 export { Profile };
+
+/* ── Styles ── */
+const pageStyle = {
+  maxWidth: 900,
+  margin: "0 auto",
+  padding: "36px 24px 100px",
+};
+const profileHeaderStyle = {
+  display: "flex",
+  alignItems: "center",
+  gap: 16,
+  marginBottom: 28,
+  padding: "20px 24px",
+  background: "var(--bg-surface)",
+  border: "1px solid var(--border)",
+  borderRadius: 16,
+};
+const avatarStyle = {
+  width: 52,
+  height: 52,
+  borderRadius: "50%",
+  background: "linear-gradient(135deg,#10B981,#3B82F6)",
+  display: "flex",
+  alignItems: "center",
+  justifyContent: "center",
+  color: "#fff",
+  flexShrink: 0,
+};
+const tabBarStyle = {
+  display: "flex",
+  gap: 4,
+  background: "var(--bg-surface)",
+  border: "1px solid var(--border)",
+  borderRadius: 14,
+  padding: 4,
+  marginBottom: 20,
+  flexWrap: "wrap",
+};
+const tabBtnStyle = (active) => ({
+  flex: "1 1 auto",
+  display: "flex",
+  alignItems: "center",
+  justifyContent: "center",
+  gap: 7,
+  padding: "10px 16px",
+  borderRadius: 10,
+  border: "none",
+  background: active ? "var(--bg-elevated)" : "transparent",
+  color: active ? "var(--text-primary)" : "var(--text-muted)",
+  fontWeight: active ? 700 : 500,
+  fontSize: "0.875rem",
+  fontFamily: "var(--font)",
+  cursor: "pointer",
+  transition: "all 0.2s",
+  boxShadow: active ? "0 2px 8px rgba(0,0,0,0.3)" : "none",
+  position: "relative",
+});
+const tabCountBadge = {
+  position: "absolute",
+  top: 4,
+  right: 6,
+  width: 16,
+  height: 16,
+  borderRadius: "50%",
+  background: "#10B981",
+  color: "#fff",
+  fontSize: "0.62rem",
+  fontWeight: 800,
+  display: "flex",
+  alignItems: "center",
+  justifyContent: "center",
+};
+const contentArea = {
+  minHeight: 300,
+};
+const orderBarStyle = {
+  position: "fixed",
+  bottom: 0,
+  left: 0,
+  right: 0,
+  background: "rgba(15,23,42,0.95)",
+  backdropFilter: "blur(20px)",
+  WebkitBackdropFilter: "blur(20px)",
+  borderTop: "1px solid rgba(255,255,255,0.08)",
+  padding: "16px 36px",
+  display: "flex",
+  alignItems: "center",
+  justifyContent: "space-between",
+  zIndex: 500,
+  boxShadow: "0 -8px 32px rgba(0,0,0,0.4)",
+};
+const addressFormWrap = {
+  background: "var(--bg-surface)",
+  border: "1px solid var(--border)",
+  borderRadius: 16,
+  padding: "28px 24px",
+};
+const formTitle = {
+  fontSize: "1rem",
+  fontWeight: 700,
+  color: "var(--text-primary)",
+  marginBottom: 20,
+};
+const formGrid = {
+  display: "grid",
+  gridTemplateColumns: "1fr 1fr",
+  gap: "0 16px",
+};
