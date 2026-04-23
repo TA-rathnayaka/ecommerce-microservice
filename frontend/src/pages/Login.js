@@ -4,6 +4,9 @@ import { onLogin, onSignup } from "../store/actions";
 import { onViewProfile } from "../store/actions";
 import { Profile } from "./Profile";
 import toast from "../utils/toast";
+import { X } from "lucide-react";
+// Add this import at the top
+import { useNavigate } from "react-router-dom";
 
 const EmailIcon = () => (
   <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
@@ -30,6 +33,7 @@ const LeafIcon = () => (
 );
 
 const Login = () => {
+  const navigate = useNavigate();
   const { user } = useAppSelector((state) => state.userReducer);
   const dispatch = useAppDispatch();
   const { token } = user;
@@ -88,6 +92,13 @@ const Login = () => {
       <div style={glow2} />
 
       <div style={cardStyle}>
+
+        {/* ── Close Button ── */}
+        {/* ── Close Button ── */}
+<button style={closeBtn} onClick={() => navigate(-1)} aria-label="Close">
+  <X size={18} />
+</button>
+
         {/* Logo */}
         <div style={logoWrap}>
           <div style={logoIcon}><LeafIcon /></div>
@@ -207,6 +218,22 @@ const cardStyle = {
   padding: "40px 36px",
   boxShadow: "0 24px 64px rgba(0,0,0,0.5)",
   animation: "fadeInUp 0.5s ease both",
+};
+const closeBtn = {
+  position: "absolute",
+  top: 16,
+  right: 16,
+  width: 32,
+  height: 32,
+  borderRadius: 8,
+  border: "1px solid rgba(255,255,255,0.15)",
+  background: "rgba(255,255,255,0.08)",
+  color: "#ffffff",           // ← solid white so X is always visible
+  display: "flex",
+  alignItems: "center",
+  justifyContent: "center",
+  cursor: "pointer",
+  transition: "background 0.2s, color 0.2s",
 };
 const logoWrap = {
   display: "flex",
