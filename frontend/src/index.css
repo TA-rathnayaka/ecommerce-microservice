@@ -2,7 +2,7 @@
 
 /* ─── CSS Custom Properties ─────────────────────────────── */
 :root {
-  --bg-base:         #0F172A;
+  --bg-base:           #f8f8f8;
   --bg-surface:      #1E293B;
   --bg-card:         #243347;
   --bg-elevated:     #2D3F55;
@@ -223,7 +223,7 @@ background: rgba(0, 0, 0, 0.09);
 /* ─── Layout ─────────────────────────────────────────────── */
 .page-wrapper {
   min-height: calc(100vh - 72px);
-  padding-top: 72px;
+
 }
 
 /* ─── Keyframe animations ────────────────────────────────── */
@@ -348,4 +348,7 @@ background: rgba(0, 0, 0, 0.09);
 }
 @media (min-width: 769px) {
   .hide-desktop { display: none !important; }
+}
+.search-input::placeholder {
+  color: rgba(0,0,0,0.35);
 }

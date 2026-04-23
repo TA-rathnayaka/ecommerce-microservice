@@ -61,16 +61,16 @@ export const Header = () => {
           {/* Desktop Nav */}
           <div style={desktopNavStyle} className="hide-mobile">
             <Link to="/" style={navLinkStyle}
-              onMouseEnter={e => { e.currentTarget.style.background = "rgba(0,0,0,0)"; e.currentTarget.style.color = "#000000"; }}
-              onMouseLeave={e => { e.currentTarget.style.background = "transparent"; e.currentTarget.style.color = "rgba(0,0,0,0.55)"; }}
+             onMouseEnter={e => { e.currentTarget.style.background = "rgba(0,0,0,0)"; e.currentTarget.style.color = "#000000"; }}
+onMouseLeave={e => { e.currentTarget.style.background = "transparent"; e.currentTarget.style.color = "rgba(0,0,0,0.55)"; }}
             >Shop</Link>
             <button style={{ ...navLinkStyle, background: "none", border: "none", cursor: "pointer", fontFamily: "var(--font)" }}
-              onMouseEnter={e => { e.currentTarget.style.background = "rgba(0,0,0,0)"; e.currentTarget.style.color = "#000000"; }}
-              onMouseLeave={e => { e.currentTarget.style.background = "transparent"; e.currentTarget.style.color = "rgba(0,0,0,0.55)"; }}
+             onMouseEnter={e => { e.currentTarget.style.background = "rgba(0,0,0,0)"; e.currentTarget.style.color = "#000000"; }}
+onMouseLeave={e => { e.currentTarget.style.background = "transparent"; e.currentTarget.style.color = "rgba(0,0,0,0.55)"; }}
             >Categories</button>
             <button style={{ ...navLinkStyle, background: "none", border: "none", cursor: "pointer", fontFamily: "var(--font)" }}
               onMouseEnter={e => { e.currentTarget.style.background = "rgba(0,0,0,0)"; e.currentTarget.style.color = "#000000"; }}
-              onMouseLeave={e => { e.currentTarget.style.background = "transparent"; e.currentTarget.style.color = "rgba(0,0,0,0.55)"; }}
+onMouseLeave={e => { e.currentTarget.style.background = "transparent"; e.currentTarget.style.color = "rgba(0,0,0,0.55)"; }}
             >Offers</button>
           </div>
 
@@ -131,17 +131,13 @@ const navStyle = (scrolled) => ({
   left: 0,
   right: 0,
   zIndex: 1000,
-  height: 72,
-  background: scrolled
-    ? "rgba(255,255,255,0.97)"
-    : "rgba(255,255,255)",
-  backdropFilter: "blur(20px) saturate(1.8)",
-  WebkitBackdropFilter: "blur(20px) saturate(1.8)",
+  height: 62,
+  background: "#f8f8f8",   // ← solid, no transparency
   borderBottom: scrolled
-    ? "1px solid rgba(0,0,0,0.10)"
-    : "1px solid rgba(0,0,0,0.05)",
+    ? "1px solid rgba(0,0,0,0.08)"
+    : "1px solid rgba(0,0,0,0.04)",
   transition: "background 0.3s ease, border-color 0.3s ease, box-shadow 0.3s ease",
-  boxShadow: scrolled ? "0 2px 20px rgba(0,0,0,0.08)" : "none",
+  boxShadow: scrolled ? "0 2px 20px rgba(0,0,0,0.06)" : "none",
 });
 const innerStyle = {
   maxWidth: 1280,
@@ -238,13 +234,13 @@ const userBtnStyle = (loggedIn) => ({
   transition: "opacity 0.2s",
 });
 const mobileMenuStyle = {
-  background: "#ffffff",
-  borderTop: "1px solid rgba(0,0,0,0.08)",
+  background: "#f8f8f8",
+  borderTop: "1px solid rgba(0,0,0,0.06)",
   padding: "16px 24px",
   display: "flex",
   flexDirection: "column",
   gap: 4,
-  boxShadow: "0 8px 24px rgba(0,0,0,0.08)",
+  boxShadow: "0 8px 24px rgba(0,0,0,0.06)",
 };
 const mobileNavLinkStyle = {
   color: "#000000",

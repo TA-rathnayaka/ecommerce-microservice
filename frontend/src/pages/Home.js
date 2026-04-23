@@ -2,11 +2,13 @@ import React, { useState, useEffect } from "react";
 import { ProductCard } from "../components/ProductCard";
 import { onGetProducts } from "../store/actions";
 import { useAppDispatch, useAppSelector } from "../store/hooks";
+import { X } from "lucide-react";
+import { HomeSlider } from "../components/HomeSlider";
 
 const categoryColors = {
-  fruits:     { active: "#10B981", glow: "rgba(16,185,129,0.3)" },
-  vegetables: { active: "#3B82F6", glow: "rgba(59,130,246,0.3)" },
-  oils:       { active: "#F59E0B", glow: "rgba(245,158,11,0.3)" },
+  fruits:     { active: "#000000", glow: "rgba(0,0,0,0.2)" },
+  vegetables: { active: "#333333", glow: "rgba(0,0,0,0.15)" },
+  oils:       { active: "#555555", glow: "rgba(0,0,0,0.12)" },
 };
 
 const SearchIcon = () => (
@@ -20,10 +22,29 @@ const Home = () => {
   const dispatch = useAppDispatch();
   const [activeCategory, setActiveCategory] = useState(null);
   const [search, setSearch] = useState("");
+  const [searchOpen, setSearchOpen] = useState(false);
 
   useEffect(() => {
     dispatch(onGetProducts());
   }, [dispatch]);
+
+  // Close overlay on Escape key
+  useEffect(() => {
+    const handleKey = (e) => {
+      if (e.key === "Escape") {
+        setSearchOpen(false);
+        setSearch("");
+      }
+    };
+    window.addEventListener("keydown", handleKey);
+    return () => window.removeEventListener("keydown", handleKey);
+  }, []);
+
+  // Prevent body scroll when overlay is open
+  useEffect(() => {
+    document.body.style.overflow = searchOpen ? "hidden" : "";
+    return () => { document.body.style.overflow = ""; };
+  }, [searchOpen]);
 
   const filtered = (products || []).filter((p) => {
     const matchCat = !activeCategory || p.type === activeCategory;
@@ -31,14 +52,86 @@ const Home = () => {
     return matchCat && matchSearch;
   });
 
+  const searchResults = (products || []).filter((p) =>
+    search && p.name.toLowerCase().includes(search.toLowerCase())
+  );
+
   return (
-    <div style={{ minHeight: "100vh" }}>
+   <div style={{ minHeight: "100vh",   background: "linear-gradient(135deg, #000000, #2c2c2c, #f5f5f5)" }}>
+
+      {/* ── Search Overlay ── */}
+      {searchOpen && (
+        <div style={overlayStyle}>
+          {/* Overlay Header */}
+          <div style={overlayHeader}>
+            <div style={overlaySearchWrap}>
+              <span style={overlaySearchIcon}><SearchIcon /></span>
+              <input
+                style={overlaySearchInput}
+                placeholder="Search products…"
+                value={search}
+                onChange={(e) => setSearch(e.target.value)}
+                autoFocus
+              />
+              {search && (
+                <button
+                  style={clearBtn}
+                  onClick={() => setSearch("")}
+                >
+                  <X size={16} />
+                </button>
+              )}
+            </div>
+            <button
+              style={overlayCloseBtn}
+              onClick={() => { setSearchOpen(false); setSearch(""); }}
+              onMouseEnter={e => e.currentTarget.style.opacity = "0.6"}
+              onMouseLeave={e => e.currentTarget.style.opacity = "1"}
+            >
+              <X size={20} />
+            </button>
+          </div>
+
+          {/* Overlay Results */}
+          <div style={overlayBody}>
+            {search === "" ? (
+              <div style={overlayHint}>
+                <span style={{ fontSize: "2rem" }}>🔍</span>
+                <p style={{ color: "rgba(0,0,0,0.4)", fontSize: "1rem", marginTop: 12 }}>
+                  Start typing to search products…
+                </p>
+              </div>
+            ) : searchResults.length === 0 ? (
+              <div style={overlayHint}>
+                <span style={{ fontSize: "2rem" }}>😕</span>
+                <p style={{ color: "rgba(0,0,0,0.4)", fontSize: "1rem", marginTop: 12 }}>
+                  No results for "<strong>{search}</strong>"
+                </p>
+              </div>
+            ) : (
+              <>
+                <p style={overlayResultCount}>
+                  {searchResults.length} result{searchResults.length !== 1 ? "s" : ""} for "<strong>{search}</strong>"
+                </p>
+                <div style={overlayGrid}>
+                  {searchResults.map((item, i) => (
+                    <div
+                      key={item._id}
+                      style={{ animation: `fadeInUp 0.3s ease ${i * 0.04}s both` }}
+                    >
+                      <ProductCard item={item} />
+                    </div>
+                  ))}
+                </div>
+              </>
+            )}
+          </div>
+        </div>
+      )}
+<HomeSlider />
       {/* ── Hero ── */}
       <section style={heroSection}>
-        <div style={heroGlow1} />
-        <div style={heroGlow2} />
-        <div style={heroContent}>
-          <span style={heroBadge}>🌿 Fresh Daily Deliveries</span>
+        <div style={heroContent}>   
           <h1 style={heroTitle}>
             Farm-Fresh Groceries
             <span style={heroGradient}> Delivered Fast</span>
@@ -48,47 +141,44 @@ const Home = () => {
             all at your fingertips.
           </p>
 
-          {/* Search bar */}
-          <div style={searchWrap}>
+          {/* Search trigger */}
+          <div
+            style={searchTrigger}
+            onClick={() => setSearchOpen(true)}
+          >
             <span style={searchIcon}><SearchIcon /></span>
-            <input
-              style={searchInput}
-              placeholder="Search products…"
-              value={search}
-              onChange={(e) => setSearch(e.target.value)}
-            />
+            <span style={{ color: "rgba(0,0,0,0.35)", fontSize: "0.9375rem" }}>
+              Search products…
+            </span>
           </div>
         </div>
       </section>
 
       {/* ── Category Filters ── */}
-      {categories && categories.length > 0 && (
+      {/* {categories && categories.length > 0 && (
         <section style={catSection}>
           <div style={catInner}>
             <button
-              style={pillStyle(!activeCategory, "#6EE7B7", "rgba(16,185,129,0.25)")}
+              style={pillStyle(!activeCategory)}
               onClick={() => setActiveCategory(null)}
             >
               All
             </button>
-            {categories.map((cat) => {
-              const c = categoryColors[cat] || { active: "#8B5CF6", glow: "rgba(139,92,246,0.3)" };
-              return (
-                <button
-                  key={cat}
-                  style={pillStyle(activeCategory === cat, c.active, c.glow)}
-                  onClick={() => setActiveCategory(activeCategory === cat ? null : cat)}
-                >
-                  {cat.charAt(0).toUpperCase() + cat.slice(1)}
-                </button>
-              );
-            })}
+            {categories.map((cat) => (
+              <button
+                key={cat}
+                style={pillStyle(activeCategory === cat)}
+                onClick={() => setActiveCategory(activeCategory === cat ? null : cat)}
+              >
+                {cat.charAt(0).toUpperCase() + cat.slice(1)}
+              </button>
+            ))}
           </div>
         </section>
-      )}
+      )} */}
 
       {/* ── Products Grid ── */}
-      <section style={productsSection}>
+      {/* <section style={productsSection}>
         <div style={sectionHeader}>
           <h2 style={sectionTitle}>
             {activeCategory
@@ -103,9 +193,7 @@ const Home = () => {
             {filtered.map((item, i) => (
               <div
                 key={item._id}
-                style={{
-                  animation: `fadeInUp 0.4s ease ${i * 0.05}s both`,
-                }}
+                style={{ animation: `fadeInUp 0.4s ease ${i * 0.05}s both` }}
               >
                 <ProductCard item={item} />
               </div>
@@ -114,18 +202,18 @@ const Home = () => {
         ) : (
           <div className="empty-state">
             <span className="empty-icon">🔍</span>
-            <p>No products found{search ? ` for "${search}"` : ""}.</p>
-            {(search || activeCategory) && (
+            <p>No products found.</p>
+            {activeCategory && (
               <button
                 className="btn btn-outline btn-sm"
-                onClick={() => { setSearch(""); setActiveCategory(null); }}
+                onClick={() => setActiveCategory(null)}
               >
-                Clear Filters
+                Clear Filter
               </button>
             )}
           </div>
         )}
-      </section>
+      </section> */}
     </div>
   );
 };
@@ -133,21 +221,111 @@ const Home = () => {
 export { Home };
 
 /* ── Styles ── */
+
+// Search Overlay
+const overlayStyle = {
+  position: "fixed",
+  inset: 0,
+  zIndex: 2000,
+  background: "#f8f8f8",
+  display: "flex",
+  flexDirection: "column",
+  animation: "fadeInUp 0.2s ease both",
+};
+const overlayHeader = {
+  display: "flex",
+  alignItems: "center",
+  gap: 12,
+  padding: "16px 24px",
+  borderBottom: "1px solid rgba(0,0,0,0.08)",
+  background: "#ffffff",
+  boxShadow: "0 2px 12px rgba(0,0,0,0.06)",
+};
+const overlaySearchWrap = {
+  flex: 1,
+  position: "relative",
+  display: "flex",
+  alignItems: "center",
+};
+const overlaySearchIcon = {
+  position: "absolute",
+  left: 16,
+  color: "rgba(0,0,0,0.4)",
+  display: "flex",
+};
+const overlaySearchInput = {
+  width: "100%",
+  padding: "13px 44px 13px 48px",
+  background: "#f8f8f8",
+  border: "1.5px solid rgba(0,0,0,0.10)",
+  borderRadius: 99,
+  color: "#000000",
+  fontSize: "1rem",
+  fontFamily: "var(--font)",
+  outline: "none",
+};
+const clearBtn = {
+  position: "absolute",
+  right: 14,
+  background: "rgba(0,0,0,0.06)",
+  border: "none",
+  borderRadius: "50%",
+  width: 26,
+  height: 26,
+  display: "flex",
+  alignItems: "center",
+  justifyContent: "center",
+  cursor: "pointer",
+  color: "rgba(0,0,0,0.5)",
+};
+const overlayCloseBtn = {
+  width: 40,
+  height: 40,
+  borderRadius: 10,
+  border: "1px solid rgba(0,0,0,0.12)",
+  background: "transparent",
+  color: "#000000",
+  display: "flex",
+  alignItems: "center",
+  justifyContent: "center",
+  cursor: "pointer",
+  flexShrink: 0,
+  transition: "opacity 0.2s",
+};
+const overlayBody = {
+  flex: 1,
+  overflowY: "auto",
+  padding: "32px 24px",
+  maxWidth: 1280,
+  width: "100%",
+  margin: "0 auto",
+};
+const overlayHint = {
+  display: "flex",
+  flexDirection: "column",
+  alignItems: "center",
+  justifyContent: "center",
+  minHeight: 300,
+};
+const overlayResultCount = {
+  fontSize: "0.875rem",
+  color: "rgba(0,0,0,0.45)",
+  marginBottom: 24,
+};
+const overlayGrid = {
+  display: "grid",
+  gridTemplateColumns: "repeat(auto-fill, minmax(210px, 1fr))",
+  gap: 20,
+};
+
+// Hero
 const heroSection = {
   position: "relative",
   overflow: "hidden",
-  padding: "80px 24px 60px",
+  padding: "40px 24px 40px",
   textAlign: "center",
-  borderBottom: "1px solid var(--border)",
-  background: "linear-gradient(180deg, rgba(16,185,129,0.06) 0%, transparent 100%)",
-};
-const heroGlow1 = {
-  position: "absolute", top: -80, left: "20%", width: 500, height: 500,
-  borderRadius: "50%", background: "rgba(16,185,129,0.08)", filter: "blur(80px)", pointerEvents: "none",
-};
-const heroGlow2 = {
-  position: "absolute", top: -40, right: "15%", width: 350, height: 350,
-  borderRadius: "50%", background: "rgba(59,130,246,0.07)", filter: "blur(60px)", pointerEvents: "none",
+ // borderBottom: "1px solid rgba(0,0,0,0.08)",
+  background: "linear-gradient(180deg, rgba(0,0,0,0.03) 0%, transparent 100%)",
 };
 const heroContent = {
   position: "relative",
@@ -156,74 +334,91 @@ const heroContent = {
   display: "flex",
   flexDirection: "column",
   alignItems: "center",
-  gap: 20,
+  gap: 8,
 };
 const heroBadge = {
   display: "inline-flex",
   alignItems: "center",
   gap: 6,
   padding: "6px 16px",
-  background: "rgba(16,185,129,0.12)",
-  border: "1px solid rgba(16,185,129,0.25)",
+  background: "rgba(0,0,0,0.06)",
+  border: "1px solid rgba(0,0,0,0.15)",
   borderRadius: 99,
   fontSize: "0.8125rem",
   fontWeight: 600,
-  color: "#6EE7B7",
+  color: "#000000",
 };
 const heroTitle = {
   fontSize: "clamp(2rem, 5vw, 3.25rem)",
   fontWeight: 900,
   lineHeight: 1.1,
   letterSpacing: "-0.04em",
-  color: "var(--text-primary)",
+  color: "#000000",
   margin: 0,
 };
 const heroGradient = {
   display: "block",
-  background: "linear-gradient(135deg,#6EE7B7,#3B82F6)",
+  background: "linear-gradient(135deg, #000000, #555555)",
   WebkitBackgroundClip: "text",
   WebkitTextFillColor: "transparent",
+  color: "transparent",
 };
 const heroSub = {
-  color: "var(--text-secondary)",
+  color: "rgba(0,0,0,0.55)",
   fontSize: "1rem",
   lineHeight: 1.6,
   maxWidth: 500,
   margin: 0,
 };
-const searchWrap = {
+const searchTrigger = {
   position: "relative",
   width: "100%",
   maxWidth: 460,
+  padding: "14px 20px 14px 48px",
+  background: "#ffffff",
+  border: "1.5px solid rgba(0,0,0,0.12)",
+  borderRadius: 99,
+  cursor: "text",
+  display: "flex",
+  alignItems: "center",
+  boxShadow: "0 2px 12px rgba(0,0,0,0.06)",
+  transition: "box-shadow 0.2s",
 };
 const searchIcon = {
   position: "absolute",
   left: 16,
   top: "50%",
   transform: "translateY(-50%)",
-  color: "var(--text-muted)",
+  color: "rgba(0,0,0,0.4)",
   display: "flex",
+};
+const searchWrap = {
+  position: "relative",
+  width: "100%",
+  maxWidth: 460,
 };
 const searchInput = {
   width: "100%",
   padding: "14px 20px 14px 48px",
-  background: "rgba(255,255,255,0.05)",
-  border: "1.5px solid var(--border)",
+  background: "#ffffff",
+  border: "1.5px solid rgba(0,0,0,0.12)",
   borderRadius: 99,
-  color: "var(--text-primary)",
+  color: "#000000",
   fontSize: "0.9375rem",
   fontFamily: "var(--font)",
   outline: "none",
   transition: "border-color 0.2s, box-shadow 0.2s",
 };
+
+// Categories
 const catSection = {
   padding: "24px 24px 0",
   position: "sticky",
   top: 72,
   zIndex: 100,
-  background: "rgba(15,23,42,0.9)",
+  background: "rgba(248,248,248,0.97)",
   backdropFilter: "blur(16px)",
-  borderBottom: "1px solid var(--border)",
+  borderBottom: "1px solid rgba(0,0,0,0.08)",
 };
 const catInner = {
   maxWidth: 1280,
@@ -233,20 +428,22 @@ const catInner = {
   gap: 8,
   paddingBottom: 18,
 };
-const pillStyle = (active, color, glow) => ({
+const pillStyle = (active) => ({
   padding: "8px 20px",
   borderRadius: 99,
-  border: active ? `1.5px solid ${color}` : "1.5px solid rgba(255,255,255,0.1)",
-  background: active ? `rgba(${color === "#10B981" ? "16,185,129" : color === "#3B82F6" ? "59,130,246" : color === "#F59E0B" ? "245,158,11" : "110,231,183"},0.15)` : "rgba(255,255,255,0.04)",
-  color: active ? color : "var(--text-secondary)",
+  border: active ? "1.5px solid #000000" : "1.5px solid rgba(0,0,0,0.15)",
+  background: active ? "#000000" : "rgba(0,0,0,0.03)",
+  color: active ? "#ffffff" : "rgba(0,0,0,0.55)",
   fontWeight: active ? 700 : 500,
   fontSize: "0.875rem",
   cursor: "pointer",
   fontFamily: "var(--font)",
   transition: "all 0.2s",
-  boxShadow: active ? `0 0 16px ${glow}` : "none",
+  boxShadow: active ? "0 2px 12px rgba(0,0,0,0.15)" : "none",
   transform: active ? "scale(1.02)" : "scale(1)",
 });
+
+// Products
 const productsSection = {
   maxWidth: 1280,
   margin: "0 auto",
@@ -261,18 +458,18 @@ const sectionHeader = {
 const sectionTitle = {
   fontSize: "1.375rem",
   fontWeight: 800,
-  color: "var(--text-primary)",
+  color: "#000000",
   letterSpacing: "-0.02em",
   margin: 0,
 };
 const productCount = {
   fontSize: "0.8125rem",
   fontWeight: 500,
-  color: "var(--text-muted)",
-  background: "var(--bg-surface)",
+  color: "rgba(0,0,0,0.45)",
+  background: "#ffffff",
   padding: "4px 12px",
   borderRadius: 99,
-  border: "1px solid var(--border)",
+  border: "1px solid rgba(0,0,0,0.10)",
 };
 const grid = {
   display: "grid",
