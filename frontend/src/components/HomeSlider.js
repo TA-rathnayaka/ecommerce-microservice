@@ -140,7 +140,7 @@ const ChevronRight = () => (
 const sliderWrapper = {
   position: "relative",
   width: "100%",
-   height: "clamp(320px, 50vw, 600px)",
+   height: "clamp(50vh, 50vw, 76vh)",
   overflow: "hidden",
   background: "#e8e8e8",
   cursor: "pointer",
