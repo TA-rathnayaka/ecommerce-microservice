@@ -51,19 +51,27 @@ export const Header = () => {
     <>
       <nav style={navStyle(scrolled)}>
         <div style={innerStyle}>
+
           {/* Brand */}
           <Link to="/" style={brandStyle}>
             <span style={brandIconStyle}><LeafIcon /></span>
-            <span style={{ background: "linear-gradient(90deg,#6EE7B7,#3B82F6)", WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent", fontWeight: 800, fontSize: "1.25rem", letterSpacing: "-0.03em" }}>
-              FreshMart
-            </span>
+            <span style={brandTextStyle}>FreshMart</span>
           </Link>
 
           {/* Desktop Nav */}
           <div style={desktopNavStyle} className="hide-mobile">
-          <Link to="/" style={navLinkStyle}>Shop</Link>
-            <button style={{ ...navLinkStyle, background: "none", border: "none", cursor: "pointer", fontFamily: "var(--font)" }}>Categories</button>
-            <button style={{ ...navLinkStyle, background: "none", border: "none", cursor: "pointer", fontFamily: "var(--font)" }}>Offers</button>
+            <Link to="/" style={navLinkStyle}
+              onMouseEnter={e => { e.currentTarget.style.background = "rgba(0,0,0,0)"; e.currentTarget.style.color = "#000000"; }}
+              onMouseLeave={e => { e.currentTarget.style.background = "transparent"; e.currentTarget.style.color = "rgba(0,0,0,0.55)"; }}
+            >Shop</Link>
+            <button style={{ ...navLinkStyle, background: "none", border: "none", cursor: "pointer", fontFamily: "var(--font)" }}
+              onMouseEnter={e => { e.currentTarget.style.background = "rgba(0,0,0,0)"; e.currentTarget.style.color = "#000000"; }}
+              onMouseLeave={e => { e.currentTarget.style.background = "transparent"; e.currentTarget.style.color = "rgba(0,0,0,0.55)"; }}
+            >Categories</button>
+            <button style={{ ...navLinkStyle, background: "none", border: "none", cursor: "pointer", fontFamily: "var(--font)" }}
+              onMouseEnter={e => { e.currentTarget.style.background = "rgba(0,0,0,0)"; e.currentTarget.style.color = "#000000"; }}
+              onMouseLeave={e => { e.currentTarget.style.background = "transparent"; e.currentTarget.style.color = "rgba(0,0,0,0.55)"; }}
+            >Offers</button>
           </div>
 
           {/* Actions */}
@@ -73,6 +81,8 @@ export const Header = () => {
                 onClick={() => navigate("/login")}
                 style={cartBtnStyle}
                 title="Cart"
+                onMouseEnter={e => { e.currentTarget.style.background = "#000000"; e.currentTarget.style.color = "#ffffff"; }}
+                onMouseLeave={e => { e.currentTarget.style.background = "transparent"; e.currentTarget.style.color = "#000000"; }}
               >
                 <CartIcon />
                 {cartCount > 0 && (
@@ -84,6 +94,8 @@ export const Header = () => {
               onClick={() => navigate("/login")}
               style={userBtnStyle(!!token)}
               title={token ? "Profile" : "Login"}
+              onMouseEnter={e => e.currentTarget.style.opacity = "0.75"}
+              onMouseLeave={e => e.currentTarget.style.opacity = "1"}
             >
               <UserIcon />
               <span className="hide-mobile" style={{ fontSize: "0.875rem", fontWeight: 600 }}>
@@ -93,7 +105,7 @@ export const Header = () => {
             <button
               className="hide-desktop btn btn-ghost btn-icon"
               onClick={() => setMenuOpen(!menuOpen)}
-              style={{ color: "var(--text-primary)" }}
+              style={{ color: "#000000" }}
             >
               {menuOpen ? <CloseIcon /> : <MenuIcon />}
             </button>
@@ -121,13 +133,15 @@ const navStyle = (scrolled) => ({
   zIndex: 1000,
   height: 72,
   background: scrolled
-    ? "rgba(15,23,42,0.92)"
-    : "rgba(15,23,42,0.70)",
-  backdropFilter: "blur(24px) saturate(1.6)",
-  WebkitBackdropFilter: "blur(24px) saturate(1.6)",
-  borderBottom: scrolled ? "1px solid rgba(255,255,255,0.08)" : "1px solid transparent",
-  transition: "background 0.3s ease, border-color 0.3s ease",
-  boxShadow: scrolled ? "0 4px 24px rgba(0,0,0,0.4)" : "none",
+    ? "rgba(255,255,255,0.97)"
+    : "rgba(255,255,255)",
+  backdropFilter: "blur(20px) saturate(1.8)",
+  WebkitBackdropFilter: "blur(20px) saturate(1.8)",
+  borderBottom: scrolled
+    ? "1px solid rgba(0,0,0,0.10)"
+    : "1px solid rgba(0,0,0,0.05)",
+  transition: "background 0.3s ease, border-color 0.3s ease, box-shadow 0.3s ease",
+  boxShadow: scrolled ? "0 2px 20px rgba(0,0,0,0.08)" : "none",
 });
 const innerStyle = {
   maxWidth: 1280,
@@ -149,37 +163,44 @@ const brandIconStyle = {
   width: 36,
   height: 36,
   borderRadius: 10,
-  background: "linear-gradient(135deg,#10B981,#059669)",
+  background: "#000000",
   display: "flex",
   alignItems: "center",
   justifyContent: "center",
-  color: "#fff",
+  color: "#ffffff",
   flexShrink: 0,
+};
+const brandTextStyle = {
+  fontWeight: 800,
+  fontSize: "1.25rem",
+  letterSpacing: "-0.03em",
+  color: "#000000",
 };
 const desktopNavStyle = {
   display: "flex",
   alignItems: "center",
-  gap: 8,
+  gap: 4,
   flex: 1,
   justifyContent: "center",
 };
 const navLinkStyle = {
-  color: "var(--text-secondary)",
+  color: "rgba(0,0,0,0.55)",
   fontSize: "0.9rem",
   fontWeight: 500,
   padding: "6px 14px",
   borderRadius: 8,
   transition: "all 0.2s",
   textDecoration: "none",
+  background: "transparent",
 };
 const cartBtnStyle = {
   position: "relative",
   width: 42,
   height: 42,
   borderRadius: "50%",
-  border: "1.5px solid rgba(255,255,255,0.1)",
-  background: "rgba(255,255,255,0.06)",
-  color: "var(--text-primary)",
+  border: "1.5px solid rgba(0,0,0,0.15)",
+  background: "transparent",
+  color: "#000000",
   display: "flex",
   alignItems: "center",
   justifyContent: "center",
@@ -193,8 +214,8 @@ const badgeStyle = {
   width: 18,
   height: 18,
   borderRadius: "50%",
-  background: "linear-gradient(135deg,#10B981,#059669)",
-  color: "#fff",
+  background: "#000000",
+  color: "#ffffff",
   fontSize: "0.65rem",
   fontWeight: 800,
   display: "flex",
@@ -207,26 +228,29 @@ const userBtnStyle = (loggedIn) => ({
   gap: 8,
   padding: "8px 16px",
   borderRadius: 99,
-  border: loggedIn ? "1.5px solid rgba(110,231,183,0.4)" : "1.5px solid rgba(255,255,255,0.1)",
-  background: loggedIn ? "rgba(16,185,129,0.12)" : "rgba(255,255,255,0.06)",
-  color: loggedIn ? "var(--accent-light)" : "var(--text-primary)",
+  border: loggedIn
+    ? "1.5px solid rgba(0,0,0,0.5)"
+    : "1.5px solid rgba(0,0,0,0.15)",
+  background: loggedIn ? "#000000" : "transparent",
+  color: loggedIn ? "#ffffff" : "#000000",
   cursor: "pointer",
   fontFamily: "var(--font)",
-  transition: "all 0.2s",
+  transition: "opacity 0.2s",
 });
 const mobileMenuStyle = {
-  background: "rgba(30,41,59,0.98)",
-  borderTop: "1px solid rgba(255,255,255,0.07)",
+  background: "#ffffff",
+  borderTop: "1px solid rgba(0,0,0,0.08)",
   padding: "16px 24px",
   display: "flex",
   flexDirection: "column",
   gap: 4,
+  boxShadow: "0 8px 24px rgba(0,0,0,0.08)",
 };
 const mobileNavLinkStyle = {
-  color: "var(--text-primary)",
+  color: "#000000",
   fontSize: "1rem",
   fontWeight: 500,
   padding: "12px 0",
-  borderBottom: "1px solid rgba(255,255,255,0.05)",
+  borderBottom: "1px solid rgba(0,0,0,0.06)",
   textDecoration: "none",
 };
