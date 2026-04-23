@@ -5,7 +5,6 @@ import { onViewProfile } from "../store/actions";
 import { Profile } from "./Profile";
 import toast from "../utils/toast";
 import { X } from "lucide-react";
-// Add this import at the top
 import { useNavigate } from "react-router-dom";
 
 const EmailIcon = () => (
@@ -87,17 +86,18 @@ const Login = () => {
 
   return (
     <div style={pageStyle}>
-      {/* Background glows */}
-      <div style={glow1} />
-      <div style={glow2} />
-
       <div style={cardStyle}>
 
         {/* ── Close Button ── */}
-        {/* ── Close Button ── */}
-<button style={closeBtn} onClick={() => navigate(-1)} aria-label="Close">
-  <X size={18} />
-</button>
+        <button
+          style={closeBtn}
+          onClick={() => navigate(-1)}
+          aria-label="Close"
+          onMouseEnter={e => e.currentTarget.style.opacity = "0.5"}
+          onMouseLeave={e => e.currentTarget.style.opacity = "1"}
+        >
+          <X size={18} />
+        </button>
 
         {/* Logo */}
         <div style={logoWrap}>
@@ -117,8 +117,22 @@ const Login = () => {
 
         {/* Tabs */}
         <div style={tabsWrap}>
-          <button style={tabBtn(!isSignup)} onClick={() => setIsSignup(false)}>Login</button>
-          <button style={tabBtn(isSignup)}  onClick={() => setIsSignup(true)}>Sign Up</button>
+          <button
+            style={tabBtn(!isSignup)}
+            onClick={() => setIsSignup(false)}
+            onMouseEnter={e => { if (isSignup) e.currentTarget.style.opacity = "0.7"; }}
+            onMouseLeave={e => { e.currentTarget.style.opacity = "1"; }}
+          >
+            Login
+          </button>
+          <button
+            style={tabBtn(isSignup)}
+            onClick={() => setIsSignup(true)}
+            onMouseEnter={e => { if (!isSignup) e.currentTarget.style.opacity = "0.7"; }}
+            onMouseLeave={e => { e.currentTarget.style.opacity = "1"; }}
+          >
+            Sign Up
+          </button>
         </div>
 
         {/* Form */}
@@ -161,22 +175,27 @@ const Login = () => {
 
         {/* CTA Button */}
         <button
-          className={`btn btn-primary btn-lg`}
-          style={{ width: "100%", justifyContent: "center", marginTop: 8, opacity: loading ? 0.7 : 1 }}
+          style={{
+            ...primaryBtn,
+            opacity: loading ? 0.5 : 1,
+            cursor: loading ? "not-allowed" : "pointer",
+          }}
           onClick={isSignup ? handleSignup : handleLogin}
           disabled={loading}
+          onMouseEnter={e => { if (!loading) e.currentTarget.style.opacity = "0.75"; }}
+          onMouseLeave={e => { if (!loading) e.currentTarget.style.opacity = "1"; }}
         >
-          {loading
-            ? "Please wait…"
-            : isSignup ? "Create Account" : "Sign In"}
+          {loading ? "Please wait…" : isSignup ? "Create Account" : "Sign In"}
         </button>
 
         {/* Toggle */}
-        <p style={{ textAlign: "center", marginTop: 22, fontSize: "0.875rem", color: "var(--text-muted)" }}>
+        <p style={{ textAlign: "center", marginTop: 22, fontSize: "0.875rem", color: "rgba(0,0,0,0.5)" }}>
           {isSignup ? "Already have an account? " : "Don't have an account? "}
           <button
             style={linkBtn}
             onClick={() => setIsSignup(!isSignup)}
+            onMouseEnter={e => e.currentTarget.style.opacity = "0.5"}
+            onMouseLeave={e => e.currentTarget.style.opacity = "1"}
           >
             {isSignup ? "Sign In" : "Sign Up"}
           </button>
@@ -196,27 +215,17 @@ const pageStyle = {
   alignItems: "center",
   justifyContent: "center",
   padding: "40px 24px",
-  overflow: "hidden",
-};
-const glow1 = {
-  position: "absolute", top: "10%", left: "20%", width: 500, height: 500,
-  borderRadius: "50%", background: "rgba(16,185,129,0.08)", filter: "blur(100px)", pointerEvents: "none",
-};
-const glow2 = {
-  position: "absolute", bottom: "10%", right: "15%", width: 400, height: 400,
-  borderRadius: "50%", background: "rgba(59,130,246,0.07)", filter: "blur(80px)", pointerEvents: "none",
+ background: "linear-gradient(135deg, #292929 0%, #1a1a1a 30%, #2d2d2d 60%, #111111 100%)"
 };
 const cardStyle = {
   position: "relative",
   width: "100%",
   maxWidth: 440,
-  background: "rgba(30,41,59,0.8)",
-  backdropFilter: "blur(24px)",
-  WebkitBackdropFilter: "blur(24px)",
-  border: "1px solid rgba(255,255,255,0.08)",
+  background: "#ffffff",
+  border: "1px solid rgba(0,0,0,0.1)",
   borderRadius: 24,
   padding: "40px 36px",
-  boxShadow: "0 24px 64px rgba(0,0,0,0.5)",
+ 
   animation: "fadeInUp 0.5s ease both",
 };
 const closeBtn = {
@@ -226,14 +235,14 @@ const closeBtn = {
   width: 32,
   height: 32,
   borderRadius: 8,
-  border: "1px solid rgba(255,255,255,0.15)",
-  background: "rgba(255,255,255,0.08)",
-  color: "#ffffff",           // ← solid white so X is always visible
+  border: "1px solid rgba(0,0,0,0.15)",
+  background: "transparent",
+  color: "#000000",
   display: "flex",
   alignItems: "center",
   justifyContent: "center",
   cursor: "pointer",
-  transition: "background 0.2s, color 0.2s",
+  transition: "opacity 0.2s",
 };
 const logoWrap = {
   display: "flex",
@@ -246,35 +255,34 @@ const logoIcon = {
   width: 46,
   height: 46,
   borderRadius: 12,
-  background: "linear-gradient(135deg,#10B981,#059669)",
+  background: "#000000",
   display: "flex",
   alignItems: "center",
   justifyContent: "center",
-  color: "#fff",
+  color: "#ffffff",
 };
 const logoText = {
   fontSize: "1.375rem",
   fontWeight: 800,
-  background: "linear-gradient(90deg,#6EE7B7,#3B82F6)",
-  WebkitBackgroundClip: "text",
-  WebkitTextFillColor: "transparent",
+  color: "#000000",
+  letterSpacing: "-0.03em",
 };
 const heading = {
   fontSize: "1.625rem",
   fontWeight: 800,
-  color: "var(--text-primary)",
+  color: "#000000",
   letterSpacing: "-0.03em",
   margin: "0 0 8px",
 };
 const subheading = {
   fontSize: "0.9rem",
-  color: "var(--text-muted)",
+  color: "rgba(0,0,0,0.45)",
   margin: 0,
 };
 const tabsWrap = {
   display: "flex",
-  background: "rgba(255,255,255,0.04)",
-  border: "1px solid var(--border)",
+  background: "#f5f5f5",
+  border: "1px solid rgba(0,0,0,0.08)",
   borderRadius: 12,
   padding: 4,
   marginBottom: 28,
@@ -285,22 +293,39 @@ const tabBtn = (active) => ({
   padding: "9px 0",
   borderRadius: 9,
   border: "none",
-  background: active ? "var(--bg-elevated)" : "transparent",
-  color: active ? "var(--text-primary)" : "var(--text-muted)",
+  background: active ? "#000000" : "transparent",
+  color: active ? "#ffffff" : "rgba(0,0,0,0.45)",
   fontWeight: active ? 700 : 500,
   fontSize: "0.875rem",
   fontFamily: "var(--font)",
   cursor: "pointer",
-  transition: "all 0.2s",
-  boxShadow: active ? "0 2px 8px rgba(0,0,0,0.3)" : "none",
+  transition: "opacity 0.2s",
 });
+const primaryBtn = {
+  width: "100%",
+  marginTop: 8,
+  padding: "12px 0",
+  borderRadius: 12,
+  border: "none",
+  background: "#000000",
+  color: "#ffffff",
+  fontWeight: 700,
+  fontSize: "1rem",
+  fontFamily: "var(--font)",
+  cursor: "pointer",
+  transition: "opacity 0.2s",
+  display: "flex",
+  alignItems: "center",
+  justifyContent: "center",
+};
 const linkBtn = {
   background: "none",
   border: "none",
-  color: "var(--accent-light)",
+  color: "#000000",
   fontWeight: 600,
   cursor: "pointer",
   fontFamily: "var(--font)",
   fontSize: "0.875rem",
   padding: 0,
+  transition: "opacity 0.2s",
 };

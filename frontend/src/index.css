@@ -10,13 +10,14 @@
   --border-accent:   rgba(110,231,183,0.3);
 
   --text-primary:    #F1F5F9;
+  --text-inputtext:#000000;
   --text-secondary:  #94A3B8;
   --text-muted:      #64748B;
 
-  --accent:          #10B981;
-  --accent-light:    #6EE7B7;
-  --accent-glow:     rgba(16,185,129,0.25);
-  --accent-hover:    #059669;
+--accent:          #000000;
+--accent-light:    #444444;
+--accent-glow:     rgba(0, 0, 0, 0.12);
+--accent-hover:    #222222;
 
   --danger:          #F43F5E;
   --danger-glow:     rgba(244,63,94,0.25);
@@ -173,7 +174,7 @@ ul { list-style: none; }
   background: rgba(255,255,255,0.05);
   border: 1.5px solid var(--border);
   border-radius: var(--radius-md);
-  color: var(--text-primary);
+  color: var(--text-inputtext);
   font-size: 0.9375rem;
   font-family: var(--font);
   transition: all var(--transition);
@@ -181,8 +182,8 @@ ul { list-style: none; }
 }
 .input-field::placeholder { color: var(--text-muted); }
 .input-field:focus {
-  border-color: var(--accent);
-  background: rgba(16,185,129,0.06);
+ 
+background: rgba(0, 0, 0, 0.09);
   box-shadow: 0 0 0 3px var(--accent-glow);
 }
 .input-icon {
