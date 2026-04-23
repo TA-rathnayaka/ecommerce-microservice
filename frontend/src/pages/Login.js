@@ -48,6 +48,11 @@ const Login = () => {
       dispatch(onViewProfile());
     }
   }, [token, dispatch]);
+  useEffect(() => {
+  setEmail("");
+  setPassword("");
+  setPhone("");
+}, [isSignup]);
 
   const handleLogin = async () => {
     if (!email || !password) {
