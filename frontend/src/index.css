@@ -25,3 +25,7 @@ body {
     linear-gradient(60deg, rgba(255, 255, 255, 0.1) 1px, transparent 1px);
   background-size: 26px 26px;
 }
+
+a {
+  text-decoration: none;
+}
