@@ -57,7 +57,7 @@ const Home = () => {
   );
 
   return (
-   <div style={{ minHeight: "100vh",   background: "linear-gradient(135deg, #000000, #2c2c2c, #f5f5f5)" }}>
+   <div style={{ minHeight: "100vh", background: "var(--hero-bg)" }}>
 
       {/* ── Search Overlay ── */}
       {searchOpen && (
@@ -97,14 +97,14 @@ const Home = () => {
             {search === "" ? (
               <div style={overlayHint}>
                 <span style={{ fontSize: "2rem" }}>🔍</span>
-                <p style={{ color: "rgba(0,0,0,0.4)", fontSize: "1rem", marginTop: 12 }}>
+                <p style={{ color: "var(--text-muted)", fontSize: "1rem", marginTop: 12 }}>
                   Start typing to search products…
                 </p>
               </div>
             ) : searchResults.length === 0 ? (
               <div style={overlayHint}>
                 <span style={{ fontSize: "2rem" }}>😕</span>
-                <p style={{ color: "rgba(0,0,0,0.4)", fontSize: "1rem", marginTop: 12 }}>
+                <p style={{ color: "var(--text-muted)", fontSize: "1rem", marginTop: 12 }}>
                   No results for "<strong>{search}</strong>"
                 </p>
               </div>
@@ -147,7 +147,7 @@ const Home = () => {
             onClick={() => setSearchOpen(true)}
           >
             <span style={searchIcon}><SearchIcon /></span>
-            <span style={{ color: "rgba(0,0,0,0.35)", fontSize: "0.9375rem" }}>
+            <span style={{ color: "var(--text-muted)", fontSize: "0.9375rem" }}>
               Search products…
             </span>
           </div>
@@ -227,7 +227,7 @@ const overlayStyle = {
   position: "fixed",
   inset: 0,
   zIndex: 2000,
-  background: "#f8f8f8",
+  background: "var(--bg-base)",
   display: "flex",
   flexDirection: "column",
   animation: "fadeInUp 0.2s ease both",
@@ -237,9 +237,9 @@ const overlayHeader = {
   alignItems: "center",
   gap: 12,
   padding: "16px 24px",
-  borderBottom: "1px solid rgba(0,0,0,0.08)",
-  background: "#ffffff",
-  boxShadow: "0 2px 12px rgba(0,0,0,0.06)",
+  borderBottom: "1px solid var(--border)",
+  background: "var(--bg-surface)",
+  boxShadow: "0 2px 12px rgba(54, 97, 43, 0.1)",
 };
 const overlaySearchWrap = {
   flex: 1,
@@ -250,16 +250,16 @@ const overlaySearchWrap = {
 const overlaySearchIcon = {
   position: "absolute",
   left: 16,
-  color: "rgba(0,0,0,0.4)",
+  color: "var(--text-muted)",
   display: "flex",
 };
 const overlaySearchInput = {
   width: "100%",
   padding: "13px 44px 13px 48px",
-  background: "#f8f8f8",
-  border: "1.5px solid rgba(0,0,0,0.10)",
+  background: "var(--bg-base)",
+  border: "1.5px solid var(--border-strong)",
   borderRadius: 99,
-  color: "#000000",
+  color: "var(--text-inputtext)",
   fontSize: "1rem",
   fontFamily: "var(--font)",
   outline: "none",
@@ -267,7 +267,7 @@ const overlaySearchInput = {
 const clearBtn = {
   position: "absolute",
   right: 14,
-  background: "rgba(0,0,0,0.06)",
+  background: "rgba(111,191,58,0.12)",
   border: "none",
   borderRadius: "50%",
   width: 26,
@@ -276,15 +276,15 @@ const clearBtn = {
   alignItems: "center",
   justifyContent: "center",
   cursor: "pointer",
-  color: "rgba(0,0,0,0.5)",
+  color: "var(--accent-hover)",
 };
 const overlayCloseBtn = {
   width: 40,
   height: 40,
   borderRadius: 10,
-  border: "1px solid rgba(0,0,0,0.12)",
+  border: "1px solid var(--border-strong)",
   background: "transparent",
-  color: "#000000",
+  color: "var(--text-primary)",
   display: "flex",
   alignItems: "center",
   justifyContent: "center",
@@ -309,7 +309,7 @@ const overlayHint = {
 };
 const overlayResultCount = {
   fontSize: "0.875rem",
-  color: "rgba(0,0,0,0.45)",
+  color: "var(--text-secondary)",
   marginBottom: 24,
 };
 const overlayGrid = {
@@ -325,7 +325,7 @@ const heroSection = {
   padding: "40px 24px 40px",
   textAlign: "center",
  // borderBottom: "1px solid rgba(0,0,0,0.08)",
-  background: "linear-gradient(180deg, rgba(0,0,0,0.03) 0%, transparent 100%)",
+  background: "linear-gradient(180deg, rgba(111,191,58,0.09) 0%, transparent 100%)",
 };
 const heroContent = {
   position: "relative",
@@ -341,30 +341,30 @@ const heroBadge = {
   alignItems: "center",
   gap: 6,
   padding: "6px 16px",
-  background: "rgba(0,0,0,0.06)",
-  border: "1px solid rgba(0,0,0,0.15)",
+  background: "rgba(111,191,58,0.12)",
+  border: "1px solid var(--border-accent)",
   borderRadius: 99,
   fontSize: "0.8125rem",
   fontWeight: 600,
-  color: "#000000",
+  color: "var(--accent-hover)",
 };
 const heroTitle = {
   fontSize: "clamp(2rem, 5vw, 3.25rem)",
   fontWeight: 900,
   lineHeight: 1.1,
   letterSpacing: "-0.04em",
-  color: "#000000",
+  color: "var(--text-primary)",
   margin: 0,
 };
 const heroGradient = {
   display: "block",
-  background: "linear-gradient(135deg, #000000, #555555)",
+  background: "linear-gradient(135deg, var(--hero-grad-start), var(--hero-grad-end))",
   WebkitBackgroundClip: "text",
   WebkitTextFillColor: "transparent",
   color: "transparent",
 };
 const heroSub = {
-  color: "rgba(0,0,0,0.55)",
+  color: "var(--text-secondary)",
   fontSize: "1rem",
   lineHeight: 1.6,
   maxWidth: 500,
@@ -375,13 +375,13 @@ const searchTrigger = {
   width: "100%",
   maxWidth: 460,
   padding: "14px 20px 14px 48px",
-  background: "#ffffff",
-  border: "1.5px solid rgba(0,0,0,0.12)",
+  background: "var(--bg-surface)",
+  border: "1.5px solid var(--border-strong)",
   borderRadius: 99,
   cursor: "text",
   display: "flex",
   alignItems: "center",
-  boxShadow: "0 2px 12px rgba(0,0,0,0.06)",
+  boxShadow: "0 2px 12px rgba(54, 97, 43, 0.12)",
   transition: "box-shadow 0.2s",
 };
 const searchIcon = {
@@ -389,7 +389,7 @@ const searchIcon = {
   left: 16,
   top: "50%",
   transform: "translateY(-50%)",
-  color: "rgba(0,0,0,0.4)",
+  color: "var(--text-muted)",
   display: "flex",
 };
 const searchWrap = {
@@ -400,10 +400,10 @@ const searchWrap = {
 const searchInput = {
   width: "100%",
   padding: "14px 20px 14px 48px",
-  background: "#ffffff",
-  border: "1.5px solid rgba(0,0,0,0.12)",
+  background: "var(--bg-surface)",
+  border: "1.5px solid var(--border-strong)",
   borderRadius: 99,
-  color: "#000000",
+  color: "var(--text-inputtext)",
   fontSize: "0.9375rem",
   fontFamily: "var(--font)",
   outline: "none",
@@ -416,9 +416,9 @@ const catSection = {
   position: "sticky",
   top: 72,
   zIndex: 100,
-  background: "rgba(248,248,248,0.97)",
+  background: "rgba(245,248,239,0.97)",
   backdropFilter: "blur(16px)",
-  borderBottom: "1px solid rgba(0,0,0,0.08)",
+  borderBottom: "1px solid var(--border)",
 };
 const catInner = {
   maxWidth: 1280,
@@ -431,15 +431,15 @@ const catInner = {
 const pillStyle = (active) => ({
   padding: "8px 20px",
   borderRadius: 99,
-  border: active ? "1.5px solid #000000" : "1.5px solid rgba(0,0,0,0.15)",
-  background: active ? "#000000" : "rgba(0,0,0,0.03)",
-  color: active ? "#ffffff" : "rgba(0,0,0,0.55)",
+  border: active ? "1.5px solid var(--accent-hover)" : "1.5px solid var(--border-strong)",
+  background: active ? "var(--accent)" : "rgba(111,191,58,0.08)",
+  color: active ? "var(--text-on-accent)" : "var(--text-secondary)",
   fontWeight: active ? 700 : 500,
   fontSize: "0.875rem",
   cursor: "pointer",
   fontFamily: "var(--font)",
   transition: "all 0.2s",
-  boxShadow: active ? "0 2px 12px rgba(0,0,0,0.15)" : "none",
+  boxShadow: active ? "0 2px 12px rgba(111,191,58,0.28)" : "none",
   transform: active ? "scale(1.02)" : "scale(1)",
 });
 
@@ -458,18 +458,18 @@ const sectionHeader = {
 const sectionTitle = {
   fontSize: "1.375rem",
   fontWeight: 800,
-  color: "#000000",
+  color: "var(--text-primary)",
   letterSpacing: "-0.02em",
   margin: 0,
 };
 const productCount = {
   fontSize: "0.8125rem",
   fontWeight: 500,
-  color: "rgba(0,0,0,0.45)",
-  background: "#ffffff",
+  color: "var(--text-secondary)",
+  background: "var(--bg-surface)",
   padding: "4px 12px",
   borderRadius: 99,
-  border: "1px solid rgba(0,0,0,0.10)",
+  border: "1px solid var(--border)",
 };
 const grid = {
   display: "grid",

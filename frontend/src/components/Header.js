@@ -53,25 +53,25 @@ export const Header = () => {
         <div style={innerStyle}>
 
           {/* Brand */}
-          <Link to="/" style={brandStyle}>
+          <Link to="/shop" style={brandStyle}>
             <span style={brandIconStyle}><LeafIcon /></span>
             <span style={brandTextStyle}>FreshMart</span>
           </Link>
 
           {/* Desktop Nav */}
           <div style={desktopNavStyle} className="hide-mobile">
-            <Link to="/" style={navLinkStyle}
-             onMouseEnter={e => { e.currentTarget.style.background = "rgba(0,0,0,0)"; e.currentTarget.style.color = "#000000"; }}
-onMouseLeave={e => { e.currentTarget.style.background = "transparent"; e.currentTarget.style.color = "rgba(0,0,0,0.55)"; }}
+            <Link to="/shop" style={navLinkStyle}
+             onMouseEnter={e => { e.currentTarget.style.background = "rgba(111,191,58,0.08)"; e.currentTarget.style.color = "var(--accent-hover)"; }}
+onMouseLeave={e => { e.currentTarget.style.background = "transparent"; e.currentTarget.style.color = "var(--text-secondary)"; }}
             >Shop</Link>
-            <button style={{ ...navLinkStyle, background: "none", border: "none", cursor: "pointer", fontFamily: "var(--font)" }}
-             onMouseEnter={e => { e.currentTarget.style.background = "rgba(0,0,0,0)"; e.currentTarget.style.color = "#000000"; }}
-onMouseLeave={e => { e.currentTarget.style.background = "transparent"; e.currentTarget.style.color = "rgba(0,0,0,0.55)"; }}
-            >Categories</button>
-            <button style={{ ...navLinkStyle, background: "none", border: "none", cursor: "pointer", fontFamily: "var(--font)" }}
-              onMouseEnter={e => { e.currentTarget.style.background = "rgba(0,0,0,0)"; e.currentTarget.style.color = "#000000"; }}
-onMouseLeave={e => { e.currentTarget.style.background = "transparent"; e.currentTarget.style.color = "rgba(0,0,0,0.55)"; }}
-            >Offers</button>
+            <Link to="/categories" style={navLinkStyle}
+             onMouseEnter={e => { e.currentTarget.style.background = "rgba(111,191,58,0.08)"; e.currentTarget.style.color = "var(--accent-hover)"; }}
+onMouseLeave={e => { e.currentTarget.style.background = "transparent"; e.currentTarget.style.color = "var(--text-secondary)"; }}
+            >Categories</Link>
+            <Link to="/offers" style={navLinkStyle}
+              onMouseEnter={e => { e.currentTarget.style.background = "rgba(111,191,58,0.08)"; e.currentTarget.style.color = "var(--accent-hover)"; }}
+onMouseLeave={e => { e.currentTarget.style.background = "transparent"; e.currentTarget.style.color = "var(--text-secondary)"; }}
+            >Offers</Link>
           </div>
 
           {/* Actions */}
@@ -81,8 +81,8 @@ onMouseLeave={e => { e.currentTarget.style.background = "transparent"; e.current
                 onClick={() => navigate("/login")}
                 style={cartBtnStyle}
                 title="Cart"
-                onMouseEnter={e => { e.currentTarget.style.background = "#000000"; e.currentTarget.style.color = "#ffffff"; }}
-                onMouseLeave={e => { e.currentTarget.style.background = "transparent"; e.currentTarget.style.color = "#000000"; }}
+                onMouseEnter={e => { e.currentTarget.style.background = "var(--accent)"; e.currentTarget.style.color = "var(--text-on-accent)"; }}
+onMouseLeave={e => { e.currentTarget.style.background = "transparent"; e.currentTarget.style.color = "var(--accent-hover)"; }}
               >
                 <CartIcon />
                 {cartCount > 0 && (
@@ -105,17 +105,19 @@ onMouseLeave={e => { e.currentTarget.style.background = "transparent"; e.current
             <button
               className="hide-desktop btn btn-ghost btn-icon"
               onClick={() => setMenuOpen(!menuOpen)}
-              style={{ color: "#000000" }}
+              style={{ color: "var(--accent-hover)" }}
             >
               {menuOpen ? <CloseIcon /> : <MenuIcon />}
             </button>
           </div>
         </div>
-
+        
         {/* Mobile menu */}
         {menuOpen && (
           <div style={mobileMenuStyle} className="hide-desktop">
-            <Link to="/" style={mobileNavLinkStyle} onClick={() => setMenuOpen(false)}>🛒 Shop</Link>
+            <Link to="/shop" style={mobileNavLinkStyle} onClick={() => setMenuOpen(false)}>🛒 Shop</Link>
+            <Link to="/categories" style={mobileNavLinkStyle} onClick={() => setMenuOpen(false)}>🧺 Categories</Link>
+            <Link to="/offers" style={mobileNavLinkStyle} onClick={() => setMenuOpen(false)}>🏷️ Offers</Link>
             <Link to="/login" style={mobileNavLinkStyle} onClick={() => setMenuOpen(false)}>👤 {token ? "Profile" : "Login"}</Link>
           </div>
         )}
@@ -132,12 +134,12 @@ const navStyle = (scrolled) => ({
   right: 0,
   zIndex: 1000,
   height: 62,
-  background: "#f8f8f8",   // ← solid, no transparency
+  background: "var(--bg-surface)",
   borderBottom: scrolled
-    ? "1px solid rgba(0,0,0,0.08)"
-    : "1px solid rgba(0,0,0,0.04)",
+    ? "1px solid var(--border-strong)"
+    : "1px solid var(--border)",
   transition: "background 0.3s ease, border-color 0.3s ease, box-shadow 0.3s ease",
-  boxShadow: scrolled ? "0 2px 20px rgba(0,0,0,0.06)" : "none",
+  boxShadow: scrolled ? "0 4px 18px rgba(45, 93, 24, 0.14)" : "none",
 });
 const innerStyle = {
   maxWidth: 1280,
@@ -159,18 +161,18 @@ const brandIconStyle = {
   width: 36,
   height: 36,
   borderRadius: 10,
-  background: "#000000",
+  background: "var(--accent)",
   display: "flex",
   alignItems: "center",
   justifyContent: "center",
-  color: "#ffffff",
+  color: "var(--text-on-accent)",
   flexShrink: 0,
 };
 const brandTextStyle = {
   fontWeight: 800,
   fontSize: "1.25rem",
   letterSpacing: "-0.03em",
-  color: "#000000",
+  color: "var(--text-primary)",
 };
 const desktopNavStyle = {
   display: "flex",
@@ -180,7 +182,7 @@ const desktopNavStyle = {
   justifyContent: "center",
 };
 const navLinkStyle = {
-  color: "rgba(0,0,0,0.55)",
+  color: "var(--text-secondary)",
   fontSize: "0.9rem",
   fontWeight: 500,
   padding: "6px 14px",
@@ -194,9 +196,9 @@ const cartBtnStyle = {
   width: 42,
   height: 42,
   borderRadius: "50%",
-  border: "1.5px solid rgba(0,0,0,0.15)",
+  border: "1.5px solid var(--border-strong)",
   background: "transparent",
-  color: "#000000",
+  color: "var(--accent-hover)",
   display: "flex",
   alignItems: "center",
   justifyContent: "center",
@@ -210,8 +212,8 @@ const badgeStyle = {
   width: 18,
   height: 18,
   borderRadius: "50%",
-  background: "#000000",
-  color: "#ffffff",
+  background: "var(--accent)",
+  color: "var(--text-on-accent)",
   fontSize: "0.65rem",
   fontWeight: 800,
   display: "flex",
@@ -225,28 +227,28 @@ const userBtnStyle = (loggedIn) => ({
   padding: "8px 16px",
   borderRadius: 99,
   border: loggedIn
-    ? "1.5px solid rgba(0,0,0,0.5)"
-    : "1.5px solid rgba(0,0,0,0.15)",
-  background: loggedIn ? "#000000" : "transparent",
-  color: loggedIn ? "#ffffff" : "#000000",
+    ? "1.5px solid var(--accent-hover)"
+    : "1.5px solid var(--border-strong)",
+  background: loggedIn ? "var(--accent)" : "transparent",
+  color: loggedIn ? "var(--text-on-accent)" : "var(--accent-hover)",
   cursor: "pointer",
   fontFamily: "var(--font)",
   transition: "opacity 0.2s",
 });
 const mobileMenuStyle = {
-  background: "#f8f8f8",
-  borderTop: "1px solid rgba(0,0,0,0.06)",
+  background: "var(--bg-surface)",
+  borderTop: "1px solid var(--border)",
   padding: "16px 24px",
   display: "flex",
   flexDirection: "column",
   gap: 4,
-  boxShadow: "0 8px 24px rgba(0,0,0,0.06)",
+  boxShadow: "0 8px 24px rgba(45, 93, 24, 0.12)",
 };
 const mobileNavLinkStyle = {
-  color: "#000000",
+  color: "var(--text-primary)",
   fontSize: "1rem",
   fontWeight: 500,
   padding: "12px 0",
-  borderBottom: "1px solid rgba(0,0,0,0.06)",
+  borderBottom: "1px solid var(--border)",
   textDecoration: "none",
 };

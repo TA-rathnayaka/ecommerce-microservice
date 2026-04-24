@@ -1,44 +1,53 @@
 @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap');
-
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
 /* ─── CSS Custom Properties ─────────────────────────────── */
 :root {
-  --bg-base:           #f8f8f8;
-  --bg-surface:      #1E293B;
-  --bg-card:         #243347;
-  --bg-elevated:     #2D3F55;
-  --border:          rgba(255,255,255,0.07);
-  --border-accent:   rgba(110,231,183,0.3);
+  /* Hardcoded grocery palette (no theme switching) */
+  --bg-base: #f5f8ef;
+  --bg-surface: #ffffff;
+  --bg-card: #ffffff;
+  --bg-elevated: #edf4e5;
 
-  --text-primary:    #F1F5F9;
-  --text-inputtext:#000000;
-  --text-secondary:  #94A3B8;
-  --text-muted:      #64748B;
+  --border: rgba(54, 97, 43, 0.12);
+  --border-strong: rgba(54, 97, 43, 0.26);
+  --border-accent: rgba(124, 179, 66, 0.38);
 
---accent:          #000000;
---accent-light:    #444444;
---accent-glow:     rgba(0, 0, 0, 0.12);
---accent-hover:    #222222;
+  --text-primary: #1b2a1f;
+  --text-inputtext: #1b2a1f;
+  --text-secondary: #38513f;
+  --text-muted: #688073;
+  --text-on-accent: #ffffff;
 
-  --danger:          #F43F5E;
-  --danger-glow:     rgba(244,63,94,0.25);
-  --warning:         #F59E0B;
-  --warning-glow:    rgba(245,158,11,0.25);
-  --info:            #3B82F6;
+  --accent: #6fbf3a;
+  --accent-light: #5aa32f;
+  --accent-hover: #4a8c27;
+  --accent-glow: rgba(111, 191, 58, 0.24);
 
-  --radius-sm:  8px;
-  --radius-md:  12px;
-  --radius-lg:  18px;
-  --radius-xl:  24px;
+  --danger: #f43f5e;
+  --danger-glow: rgba(244, 63, 94, 0.25);
+  --warning: #f59e0b;
+  --warning-glow: rgba(245, 158, 11, 0.25);
+  --info: #3b82f6;
+
+  --hero-bg: linear-gradient(120deg, #f1f7e7, #ffffff 52%, #ecf5df);
+  --hero-grad-start: #3e7621;
+  --hero-grad-end: #74bf3d;
+
+  --radius-sm: 8px;
+  --radius-md: 12px;
+  --radius-lg: 18px;
+  --radius-xl: 24px;
   --radius-pill: 999px;
 
-  --shadow-sm:  0 1px 3px rgba(0,0,0,0.4);
-  --shadow-md:  0 4px 16px rgba(0,0,0,0.5);
-  --shadow-lg:  0 8px 32px rgba(0,0,0,0.6);
+  --shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.4);
+  --shadow-md: 0 4px 16px rgba(0, 0, 0, 0.5);
+  --shadow-lg: 0 8px 32px rgba(0, 0, 0, 0.6);
   --shadow-accent: 0 0 24px var(--accent-glow);
 
-  --transition: 0.22s cubic-bezier(0.4,0,0.2,1);
-
-  --font: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+  --transition: 0.22s cubic-bezier(0.4, 0, 0.2, 1);
+  --font: "Inter", -apple-system, BlinkMacSystemFont, sans-serif;
 }
 
 /* ─── Reset ─────────────────────────────────────────────── */
@@ -171,7 +180,7 @@ ul { list-style: none; }
 .input-field {
   width: 100%;
   padding: 14px 16px 14px 44px;
-  background: rgba(255,255,255,0.05);
+  background: var(--bg-base);
   border: 1.5px solid var(--border);
   border-radius: var(--radius-md);
   color: var(--text-inputtext);
@@ -182,8 +191,8 @@ ul { list-style: none; }
 }
 .input-field::placeholder { color: var(--text-muted); }
 .input-field:focus {
- 
-background: rgba(0, 0, 0, 0.09);
+  background: var(--bg-surface);
+  border-color: var(--border-strong);
   box-shadow: 0 0 0 3px var(--accent-glow);
 }
 .input-icon {

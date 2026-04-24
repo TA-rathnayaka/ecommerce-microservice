@@ -194,7 +194,7 @@ const Login = () => {
         </button>
 
         {/* Toggle */}
-        <p style={{ textAlign: "center", marginTop: 22, fontSize: "0.875rem", color: "rgba(0,0,0,0.5)" }}>
+        <p style={{ textAlign: "center", marginTop: 22, fontSize: "0.875rem", color: "var(--text-secondary)" }}>
           {isSignup ? "Already have an account? " : "Don't have an account? "}
           <button
             style={linkBtn}
@@ -220,17 +220,17 @@ const pageStyle = {
   alignItems: "center",
   justifyContent: "center",
   padding: "40px 24px",
- background: "linear-gradient(135deg, #292929 0%, #1a1a1a 30%, #2d2d2d 60%, #111111 100%)"
+  background: "var(--hero-bg)",
 };
 const cardStyle = {
   position: "relative",
   width: "100%",
   maxWidth: 440,
-  background: "#ffffff",
-  border: "1px solid rgba(0,0,0,0.1)",
+  background: "var(--bg-surface)",
+  border: "1px solid var(--border)",
   borderRadius: 24,
   padding: "40px 36px",
- 
+  boxShadow: "0 10px 40px rgba(54, 97, 43, 0.12)",
   animation: "fadeInUp 0.5s ease both",
 };
 const closeBtn = {
@@ -240,9 +240,9 @@ const closeBtn = {
   width: 32,
   height: 32,
   borderRadius: 8,
-  border: "1px solid rgba(0,0,0,0.15)",
+  border: "1px solid var(--border-strong)",
   background: "transparent",
-  color: "#000000",
+  color: "var(--text-primary)",
   display: "flex",
   alignItems: "center",
   justifyContent: "center",
@@ -260,34 +260,34 @@ const logoIcon = {
   width: 46,
   height: 46,
   borderRadius: 12,
-  background: "#000000",
+  background: "var(--accent)",
   display: "flex",
   alignItems: "center",
   justifyContent: "center",
-  color: "#ffffff",
+  color: "var(--text-on-accent)",
 };
 const logoText = {
   fontSize: "1.375rem",
   fontWeight: 800,
-  color: "#000000",
+  color: "var(--text-primary)",
   letterSpacing: "-0.03em",
 };
 const heading = {
   fontSize: "1.625rem",
   fontWeight: 800,
-  color: "#000000",
+  color: "var(--text-primary)",
   letterSpacing: "-0.03em",
   margin: "0 0 8px",
 };
 const subheading = {
   fontSize: "0.9rem",
-  color: "rgba(0,0,0,0.45)",
+  color: "var(--text-secondary)",
   margin: 0,
 };
 const tabsWrap = {
   display: "flex",
-  background: "#f5f5f5",
-  border: "1px solid rgba(0,0,0,0.08)",
+  background: "var(--bg-elevated)",
+  border: "1px solid var(--border)",
   borderRadius: 12,
   padding: 4,
   marginBottom: 28,
@@ -298,8 +298,8 @@ const tabBtn = (active) => ({
   padding: "9px 0",
   borderRadius: 9,
   border: "none",
-  background: active ? "#000000" : "transparent",
-  color: active ? "#ffffff" : "rgba(0,0,0,0.45)",
+  background: active ? "var(--accent)" : "transparent",
+  color: active ? "var(--text-on-accent)" : "var(--text-secondary)",
   fontWeight: active ? 700 : 500,
   fontSize: "0.875rem",
   fontFamily: "var(--font)",
@@ -312,8 +312,8 @@ const primaryBtn = {
   padding: "12px 0",
   borderRadius: 12,
   border: "none",
-  background: "#000000",
-  color: "#ffffff",
+  background: "linear-gradient(135deg, var(--accent), var(--accent-hover))",
+  color: "var(--text-on-accent)",
   fontWeight: 700,
   fontSize: "1rem",
   fontFamily: "var(--font)",
@@ -326,7 +326,7 @@ const primaryBtn = {
 const linkBtn = {
   background: "none",
   border: "none",
-  color: "#000000",
+  color: "var(--accent-hover)",
   fontWeight: 600,
   cursor: "pointer",
   fontFamily: "var(--font)",
