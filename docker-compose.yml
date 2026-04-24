@@ -5,7 +5,7 @@ services:
       - "27018:27017"
     container_name: nosql-db
     volumes:
-      - ./db/:/data/db
+      - ./backend/db/:/data/db
 
   rabbitmq:
     image: rabbitmq:3.12-alpine
@@ -16,7 +16,7 @@ services:
   products:
     build:
       dockerfile: Dockerfile
-      context: ./products
+      context: ./backend/products
     container_name: products
     ports:
       - "8002:8002"
@@ -25,15 +25,15 @@ services:
       - "nosql-db"
       - "rabbitmq"
     volumes:
-      - .:/app
+      - ./backend:/app
       - /app/products/node_modules
-
     env_file:
-      - ./products/.env.dev
+      - ./backend/products/.env.dev
+
   shopping:
     build:
       dockerfile: Dockerfile
-      context: ./shopping
+      context: ./backend/shopping
     container_name: shopping
     ports:
       - "8003:8003"
@@ -42,14 +42,15 @@ services:
       - "nosql-db"
       - "rabbitmq"
     volumes:
-      - .:/app
+      - ./backend:/app
       - /app/shopping/node_modules
     env_file:
-      - ./shopping/.env.dev
+      - ./backend/shopping/.env.dev
+
   customer:
     build:
       dockerfile: Dockerfile
-      context: ./customer
+      context: ./backend/customer
     container_name: customer
     ports:
       - "8001:8001"
@@ -58,17 +59,34 @@ services:
       - "nosql-db"
       - "rabbitmq"
     volumes:
-      - .:/app/
+      - ./backend:/app/
       - /app/customer/node_modules
     env_file:
-      - ./customer/.env.dev
+      - ./backend/customer/.env.dev
+
   nginx-proxy:
     build:
       dockerfile: Dockerfile
-      context: ./proxy
+      context: ./backend/proxy
     depends_on:
       - products
       - shopping
       - customer
     ports:
       - 8000:8000
+
+  frontend:
+    build:
+      dockerfile: Dockerfile
+      context: ./frontend
+    container_name: frontend
+    ports:
+      - "3000:3000"
+    restart: always
+    volumes:
+      - ./frontend:/app/frontend
+      - /app/frontend/node_modules
+    environment:
+      - CHOKIDAR_USEPOLLING=true
+    stdin_open: true
+    tty: true
