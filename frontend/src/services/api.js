@@ -1,12 +1,14 @@
+// services/api.js
 import { API_BASE_URL } from "../config";
-
 async function request(path, options = {}) {
+  const { headers: customHeaders, ...restOptions } = options;
+
   const response = await fetch(`${API_BASE_URL}${path}`, {
     headers: {
       "Content-Type": "application/json",
-      ...(options.headers || {}),
+      ...(customHeaders || {}),
     },
-    ...options,
+    ...restOptions,
   });
 
   const text = await response.text();
@@ -15,17 +17,19 @@ async function request(path, options = {}) {
   try {
     data = text ? JSON.parse(text) : null;
   } catch {
-    throw new Error("Invalid JSON response from server");
-    // fixed: JSON.parse was unguarded — HTML error pages would throw a confusing parse error
+    throw new Error(`Server error: ${response.status} ${response.statusText}`);
   }
 
   if (!response.ok) {
-    const message = data?.message || data?.error || `Request failed: ${response.status}`;
-    throw new Error(message);
+    const message =
+      data?.message ||
+      data?.error ||
+      `Request failed: ${response.status} ${response.statusText}`;
+    const error = new Error(message);
+    error.status = response.status;
+    throw error;
   }
 
-  // fixed: backend wraps everything in { data: ... } via FormateData()
-  // unwrap it here once so callers always get the inner payload directly
   return data?.data ?? data;
 }
 
@@ -35,8 +39,13 @@ function authHeaders(token) {
 
 export const api = {
   getProducts: () => request("/"),
+
   getProductById: (productId) => request(`/${productId}`),
+  // fixed: was /products/${productId} but nginx routes / → products service directly
+  // there is no /products prefix in the gateway
+
   getProductsByCategory: (type) => request(`/category/${type}`),
+  // fixed: same — no /products prefix needed
 
   signup: (payload) =>
     request("/customer/signup", {
@@ -53,12 +62,10 @@ export const api = {
   getProfile: (token) =>
     request("/customer/profile", {
       headers: authHeaders(token),
-      // fixed: was /customer/profile but route is /profile under customer router
     }),
 
   getOrders: (token) =>
     request("/customer/shopping-details", {
-      // fixed: was /customer/orders which doesn't exist — correct route is /shopping-details
       headers: authHeaders(token),
     }),
 
@@ -67,24 +74,24 @@ export const api = {
       headers: authHeaders(token),
     }),
 
-  updateCart: (token, payload) =>
-    request("/shopping/cart", {
-      method: "PUT",
-      headers: authHeaders(token),
-      body: JSON.stringify(payload),
-    }),
+  updateCart: (token, payload) => {
+  return request("/shopping/cart", {
+    method: "PUT",
+    headers: authHeaders(token),
+    body: JSON.stringify(payload),
+  });
+},
 
   removeFromCart: (token, id) =>
-    request("/shopping/cart", {
+    request(`/shopping/cart/${id}`, {
       method: "DELETE",
       headers: authHeaders(token),
-      body: JSON.stringify({ _id: id }),
     }),
 
   placeOrder: (token, txnId) =>
     request("/shopping/order", {
       method: "POST",
       headers: authHeaders(token),
-      body: JSON.stringify({ txnId }),
+      body: JSON.stringify({ txnNumber: txnId }),
     }),
 };

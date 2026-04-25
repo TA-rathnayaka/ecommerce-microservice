@@ -1,3 +1,4 @@
+// CartPage.jsx
 import { useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { CartItemRow } from "../components/CartItemRow";
@@ -17,7 +18,7 @@ export function CartPage() {
   const toast = useToast();
   const { token } = useAuth();
   const {
-    cartItems,
+    cartItems,      // already normalized to flat items array by CartContext
     isCartLoading,
     updateCartQuantity,
     removeFromCart,
@@ -30,9 +31,9 @@ export function CartPage() {
   const total = useMemo(
     () =>
       cartItems.reduce((sum, item) => {
-        const product = item.product || item;
-        const quantity = item.unit || item.qty || 1;
-        return sum + Number(product.price || 0) * quantity;
+        const price = Number(item.product?.price ?? 0);
+        const qty = Number(item.unit ?? 1);
+        return sum + price * qty;
       }, 0),
     [cartItems]
   );
@@ -72,24 +73,32 @@ export function CartPage() {
         <p className="font-body text-ink/70">Your cart is empty.</p>
       ) : (
         <div className="space-y-3">
-          {cartItems.map((item, index) => {
-            const product = item.product || item;
-            const quantity = item.unit || item.qty || 1;
-            const itemId = product._id || item._id;
+          {cartItems.map((item) => {
+            const quantity = Number(item.unit ?? 1);
+            const productId = item.product?._id;  // for updateCartQuantity
+            const itemId = item._id;               // for removeFromCart
 
             return (
               <CartItemRow
-                key={`${itemId}-${index}`}
+                key={itemId}
                 item={item}
                 onIncrease={() => updateCartQuantity(item, quantity + 1)}
-                onDecrease={() => updateCartQuantity(item, quantity - 1)}
-                onRemove={() => removeFromCart(itemId)}
+                onDecrease={() =>
+                  quantity > 1
+                    ? updateCartQuantity(item, quantity - 1)
+                    : removeFromCart(productId)
+                }
+                onRemove={() => removeFromCart(productId)}
+                // fixed: remove uses productId not itemId — api.removeFromCart
+                // calls DELETE /shopping/cart/:id where :id is the product id
               />
             );
           })}
 
           <div className="mt-6 rounded-2xl border border-ink/10 bg-white/80 p-5">
-            <p className="font-display text-2xl font-semibold text-ink">Total: ${total.toFixed(2)}</p>
+            <p className="font-display text-2xl font-semibold text-ink">
+              Total: ${total.toFixed(2)}
+            </p>
             <button
               onClick={handlePlaceOrder}
               disabled={isPlacingOrder}

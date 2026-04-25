@@ -13,29 +13,28 @@ export function CategoryPage() {
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
-    let mounted = true;
+  let mounted = true;
+  setProducts([]);
+  setIsLoading(true);
 
-    async function loadByCategory() {
-      try {
-        setIsLoading(true);
-        const data = await api.getProductsByCategory(type);
-        if (mounted) {
-          setProducts(Array.isArray(data) ? data : data?.products || []);
-        }
-      } catch (error) {
-        toast.error(error.message || "Failed to fetch category products");
-      } finally {
-        if (mounted) {
-          setIsLoading(false);
-        }
+  async function loadByCategory() {
+    try {
+      const data = await api.getProductsByCategory(type);
+      if (mounted) {
+        setProducts(Array.isArray(data) ? data : data?.products || []);
       }
+    } catch (error) {
+      if (mounted) setProducts([]);
+    } finally {
+      if (mounted) setIsLoading(false);
     }
+  }
 
-    loadByCategory();
-    return () => {
-      mounted = false;
-    };
-  }, [type, toast]);
+  loadByCategory();
+  return () => {
+    mounted = false;
+  };
+}, [type]);
 
   return (
     <section className="mx-auto w-full max-w-6xl px-4 py-8 md:px-6">

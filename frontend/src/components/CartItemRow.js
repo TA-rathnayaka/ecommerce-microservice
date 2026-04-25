@@ -1,29 +1,58 @@
 export function CartItemRow({ item, onIncrease, onDecrease, onRemove }) {
   const product = item.product || item;
-  const quantity = item.unit || item.qty || 1;
+  const quantity = Number(item.unit ?? item.qty ?? 1);
+  const subtotal = (Number(product.price ?? 0) * quantity).toFixed(2);
 
   return (
-    <div className="grid grid-cols-12 items-center gap-3 rounded-2xl border border-ink/10 bg-white/70 p-4">
-      <div className="col-span-6">
-        <p className="font-display text-lg font-semibold text-ink">{product.name}</p>
-        <p className="font-body text-sm text-ink/70">${product.price} each</p>
+    <div className="flex flex-col gap-3 rounded-2xl border border-ink/10 bg-white/80 p-4 shadow-sm backdrop-blur sm:flex-row sm:items-center sm:gap-4">
+      
+      {/* Product info */}
+      <div className="flex-1 min-w-0">
+        <p className="font-display text-base font-bold text-ink truncate">{product.name}</p>
+        <p className="font-body text-sm text-ink/50 mt-0.5">${Number(product.price ?? 0).toFixed(2)} each</p>
       </div>
-      <div className="col-span-3 flex items-center gap-2">
-        <button onClick={onDecrease} className="h-8 w-8 rounded-full border border-ink/20 text-ink hover:bg-clay">
-          -
-        </button>
-        <span className="w-8 text-center font-body text-sm font-semibold">{quantity}</span>
-        <button onClick={onIncrease} className="h-8 w-8 rounded-full border border-ink/20 text-ink hover:bg-clay">
-          +
-        </button>
-      </div>
-      <div className="col-span-2 text-right font-display text-base font-semibold text-ink">
-        ${(product.price * quantity).toFixed(2)}
-      </div>
-      <div className="col-span-1 text-right">
-        <button onClick={onRemove} className="rounded-lg bg-red-500/15 px-3 py-1 text-xs font-semibold text-red-700 hover:bg-red-500/25">
+
+      {/* Controls row — sits below name on mobile, inline on desktop */}
+      <div className="flex items-center justify-between gap-3 sm:justify-end">
+
+        {/* Quantity stepper */}
+        <div className="flex items-center gap-2 rounded-xl border border-ink/15 bg-clay/40 px-2 py-1">
+          <button
+            onClick={onDecrease}
+            className="flex h-7 w-7 items-center justify-center rounded-lg text-ink/70 transition hover:bg-white/80 hover:text-ink active:scale-95"
+          >
+            −
+          </button>
+          <span className="w-6 text-center font-body text-sm font-bold text-ink">
+            {quantity}
+          </span>
+          <button
+            onClick={onIncrease}
+            className="flex h-7 w-7 items-center justify-center rounded-lg text-ink/70 transition hover:bg-white/80 hover:text-ink active:scale-95"
+          >
+            +
+          </button>
+        </div>
+
+        {/* Subtotal */}
+        <p className="w-20 text-right font-display text-base font-bold text-ink">
+          ${subtotal}
+        </p>
+
+        {/* Remove */}
+        <button
+          onClick={onRemove}
+          className="flex items-center gap-1 rounded-xl border border-red-200 bg-red-50 px-3 py-1.5 text-xs font-semibold text-red-600 transition hover:bg-red-100 hover:text-red-700 active:scale-95"
+        >
+          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+            <polyline points="3 6 5 6 21 6"/>
+            <path d="M19 6l-1 14H6L5 6"/>
+            <path d="M10 11v6M14 11v6"/>
+            <path d="M9 6V4h6v2"/>
+          </svg>
           Remove
         </button>
+
       </div>
     </div>
   );
