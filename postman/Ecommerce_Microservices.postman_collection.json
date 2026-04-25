@@ -1,0 +1,1963 @@
+{
+	"info": {
+		"_postman_id": "a97440c6-65c8-448e-81c0-b6c2ded8914d",
+		"name": "Ecommerce Microservices (Robust)",
+		"description": "Robust collection for Products, Shopping, and Customer microservices via Nginx Proxy.\n\n## Setup\n1. Import this collection\n2. Create an environment with `base_url = http://localhost:8000`\n3. Run 'Customer / Signup' then 'Customer / Login' — token is auto-saved\n4. Use 'Products / Create Product' and the ID is auto-saved for cart requests\n\n## Variables used\n- `base_url` — set in environment (default: http://localhost:8000)\n- `user_token` — auto-set after Login\n- `product_id` — auto-set after Create Product",
+		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+		"_exporter_id": "33942593"
+	},
+	"item": [
+		{
+			"name": "Products Service",
+			"item": [
+				{
+					"name": "Get All Products",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"type": "text/javascript",
+								"exec": [
+									"pm.test('Status is 200', function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"pm.test('Response is JSON', function () {",
+									"    pm.response.to.be.json;",
+									"});",
+									"",
+									"pm.test('Response time < 2000ms', function () {",
+									"    pm.expect(pm.response.responseTime).to.be.below(2000);",
+									"});",
+									"",
+									"pm.test('Returns an array of products', function () {",
+									"    const body = pm.response.json();",
+									"    pm.expect(body).to.be.an('array');",
+									"});"
+								]
+							}
+						}
+					],
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								""
+							]
+						},
+						"description": "Returns all products in the catalog."
+					},
+					"response": []
+				},
+				{
+					"name": "Get WhoAmI (Products)",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"type": "text/javascript",
+								"exec": [
+									"pm.test('Status is 200', function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"pm.test('Response is JSON', function () {",
+									"    pm.response.to.be.json;",
+									"});",
+									"",
+									"pm.test('Response has service name', function () {",
+									"    const body = pm.response.json();",
+									"    pm.expect(body).to.have.property('service');",
+									"});"
+								]
+							}
+						}
+					],
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/whoami",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"whoami"
+							]
+						},
+						"description": "Returns service identity info for the Products service."
+					},
+					"response": []
+				},
+				{
+					"name": "Create Product",
+					"event": [
+						{
+							"listen": "prerequest",
+							"script": {
+								"type": "text/javascript",
+								"exec": [
+									"// Validate required fields are present in the request body",
+									"const body = JSON.parse(pm.request.body.raw);",
+									"const required = ['name', 'type', 'unit', 'price'];",
+									"required.forEach(field => {",
+									"    if (!body[field]) {",
+									"        console.warn(`Warning: '${field}' is missing from request body`);",
+									"    }",
+									"});"
+								]
+							}
+						},
+						{
+							"listen": "test",
+							"script": {
+								"type": "text/javascript",
+								"exec": [
+									"pm.test('Status is 201 or 200', function () {",
+									"    pm.expect(pm.response.code).to.be.oneOf([200, 201]);",
+									"});",
+									"",
+									"pm.test('Response is JSON', function () {",
+									"    pm.response.to.be.json;",
+									"});",
+									"",
+									"pm.test('Response time < 2000ms', function () {",
+									"    pm.expect(pm.response.responseTime).to.be.below(2000);",
+									"});",
+									"",
+									"pm.test('Product has _id', function () {",
+									"    const body = pm.response.json();",
+									"    pm.expect(body).to.have.property('_id');",
+									"    // Auto-save for use in Get Product by ID and Add to Cart",
+									"    pm.collectionVariables.set('product_id', body._id);",
+									"    console.log('Saved product_id:', body._id);",
+									"});",
+									"",
+									"pm.test('Product has required fields', function () {",
+									"    const body = pm.response.json();",
+									"    pm.expect(body).to.have.property('name');",
+									"    pm.expect(body).to.have.property('price');",
+									"    pm.expect(body).to.have.property('type');",
+									"});"
+								]
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"name\": \"iPhone 15\",\n    \"desc\": \"Latest iPhone model with A16 Bionic chip\",\n    \"type\": \"Electronics\",\n    \"unit\": 10,\n    \"price\": 999,\n    \"available\": true,\n    \"suplier\": \"Apple\",\n    \"banner\": \"iphone15.png\"\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{base_url}}/product/create",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"product",
+								"create"
+							]
+						},
+						"description": "Creates a new product. Auto-saves the returned `_id` as `product_id` collection variable."
+					},
+					"response": []
+				},
+				{
+					"name": "Get Products by Category",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"type": "text/javascript",
+								"exec": [
+									"pm.test('Status is 200', function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"pm.test('Response is JSON', function () {",
+									"    pm.response.to.be.json;",
+									"});",
+									"",
+									"pm.test('Returns an array', function () {",
+									"    const body = pm.response.json();",
+									"    pm.expect(body).to.be.an('array');",
+									"});",
+									"",
+									"pm.test('All products match requested category', function () {",
+									"    const body = pm.response.json();",
+									"    const pathSegments = pm.request.url.path;",
+									"    const category = pathSegments[pathSegments.length - 1];",
+									"    body.forEach(product => {",
+									"        pm.expect(product.type).to.equal(category);",
+									"    });",
+									"});"
+								]
+							}
+						}
+					],
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/category/fruits",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"category",
+								"fruits"
+							]
+						},
+						"description": "Fetches all products in a given category. Change 'Electronics' in the path to query other categories."
+					},
+					"response": []
+				},
+				{
+					"name": "Get Product by ID",
+					"event": [
+						{
+							"listen": "prerequest",
+							"script": {
+								"type": "text/javascript",
+								"exec": [
+									"const id = pm.collectionVariables.get('product_id');",
+									"if (!id || id === '') {",
+									"    console.warn('product_id is not set. Run \"Create Product\" first, or set it manually.');",
+									"}"
+								]
+							}
+						},
+						{
+							"listen": "test",
+							"script": {
+								"type": "text/javascript",
+								"exec": [
+									"pm.test('Status is 200', function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"pm.test('Response is JSON', function () {",
+									"    pm.response.to.be.json;",
+									"});",
+									"",
+									"pm.test('Product has _id, name, and price', function () {",
+									"    const body = pm.response.json();",
+									"    pm.expect(body).to.have.property('_id');",
+									"    pm.expect(body).to.have.property('name');",
+									"    pm.expect(body).to.have.property('price');",
+									"});",
+									"",
+									"pm.test('Returned ID matches requested ID', function () {",
+									"    const body = pm.response.json();",
+									"    const requested = pm.collectionVariables.get('product_id');",
+									"    pm.expect(body._id).to.equal(requested);",
+									"});"
+								]
+							}
+						}
+					],
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/{{product_id}}",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"{{product_id}}"
+							]
+						},
+						"description": "Fetches a single product by MongoDB `_id`. Uses `product_id` variable auto-set by 'Create Product'. Replace manually if needed."
+					},
+					"response": []
+				}
+			],
+			"description": "Endpoints for the Products microservice."
+		},
+		{
+			"name": "Seed — Sample Products",
+			"item": [
+				{
+					"name": "Seed — alphonso mango (fruits)",
+					"event": [
+						{
+							"listen": "prerequest",
+							"script": {
+								"type": "text/javascript",
+								"exec": [
+									"const body = JSON.parse(pm.request.body.raw);",
+									"const required = ['name', 'type', 'unit', 'price'];",
+									"required.forEach(field => {",
+									"    if (body[field] === undefined || body[field] === null || body[field] === '') {",
+									"        console.warn(`Seed warning: '${field}' is missing`);",
+									"    }",
+									"});"
+								]
+							}
+						},
+						{
+							"listen": "test",
+							"script": {
+								"type": "text/javascript",
+								"exec": [
+									"pm.test('Status is 200 or 201', function () {",
+									"    pm.expect(pm.response.code).to.be.oneOf([200, 201]);",
+									"});",
+									"pm.test('Response is JSON', function () {",
+									"    pm.response.to.be.json;",
+									"});",
+									"pm.test('Response time < 2000ms', function () {",
+									"    pm.expect(pm.response.responseTime).to.be.below(2000);",
+									"});",
+									"pm.test('Product has _id — saving as product_id', function () {",
+									"    const body = pm.response.json();",
+									"    pm.expect(body).to.have.property('_id');",
+									"    pm.collectionVariables.set('product_id', body._id);",
+									"    console.log('Seeded: alphonso mango | _id:', body._id);",
+									"});",
+									"pm.test('Name and type match seed data', function () {",
+									"    const body = pm.response.json();",
+									"    pm.expect(body.name).to.equal('alphonso mango');",
+									"    pm.expect(body.type).to.equal('fruits');",
+									"});",
+									"pm.test('Price is a positive number', function () {",
+									"    const body = pm.response.json();",
+									"    pm.expect(body.price).to.be.a('number').and.above(0);",
+									"});",
+									"pm.test('available flag is true', function () {",
+									"    const body = pm.response.json();",
+									"    pm.expect(body.available).to.equal(true);",
+									"});"
+								]
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"name\": \"alphonso mango\",\n    \"desc\": \"great Quality of Mango\",\n    \"type\": \"fruits\",\n    \"banner\": \"http://codergogoi.com/youtube/images/alphonso.jpeg\",\n    \"unit\": 1,\n    \"price\": 300,\n    \"available\": true,\n    \"suplier\": \"Golden seed firming\"\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{base_url}}/product/create",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"product",
+								"create"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Seed — Apples (fruits)",
+					"event": [
+						{
+							"listen": "prerequest",
+							"script": {
+								"type": "text/javascript",
+								"exec": [
+									"const body = JSON.parse(pm.request.body.raw);",
+									"const required = ['name', 'type', 'unit', 'price'];",
+									"required.forEach(field => {",
+									"    if (body[field] === undefined || body[field] === null || body[field] === '') {",
+									"        console.warn(`Seed warning: '${field}' is missing`);",
+									"    }",
+									"});"
+								]
+							}
+						},
+						{
+							"listen": "test",
+							"script": {
+								"type": "text/javascript",
+								"exec": [
+									"pm.test('Status is 200 or 201', function () {",
+									"    pm.expect(pm.response.code).to.be.oneOf([200, 201]);",
+									"});",
+									"pm.test('Response is JSON', function () {",
+									"    pm.response.to.be.json;",
+									"});",
+									"pm.test('Response time < 2000ms', function () {",
+									"    pm.expect(pm.response.responseTime).to.be.below(2000);",
+									"});",
+									"pm.test('Product has _id — saving as product_id', function () {",
+									"    const body = pm.response.json();",
+									"    pm.expect(body).to.have.property('_id');",
+									"    pm.collectionVariables.set('product_id', body._id);",
+									"    console.log('Seeded: Apples | _id:', body._id);",
+									"});",
+									"pm.test('Name and type match seed data', function () {",
+									"    const body = pm.response.json();",
+									"    pm.expect(body.name).to.equal('Apples');",
+									"    pm.expect(body.type).to.equal('fruits');",
+									"});",
+									"pm.test('Price is a positive number', function () {",
+									"    const body = pm.response.json();",
+									"    pm.expect(body.price).to.be.a('number').and.above(0);",
+									"});",
+									"pm.test('available flag is true', function () {",
+									"    const body = pm.response.json();",
+									"    pm.expect(body.available).to.equal(true);",
+									"});"
+								]
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"name\": \"Apples\",\n    \"desc\": \"great Quality of Apple\",\n    \"type\": \"fruits\",\n    \"banner\": \"http://codergogoi.com/youtube/images/apples.jpeg\",\n    \"unit\": 1,\n    \"price\": 140,\n    \"available\": true,\n    \"suplier\": \"Golden seed firming\"\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{base_url}}/product/create",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"product",
+								"create"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Seed — Kesar Mango (fruits)",
+					"event": [
+						{
+							"listen": "prerequest",
+							"script": {
+								"type": "text/javascript",
+								"exec": [
+									"const body = JSON.parse(pm.request.body.raw);",
+									"const required = ['name', 'type', 'unit', 'price'];",
+									"required.forEach(field => {",
+									"    if (body[field] === undefined || body[field] === null || body[field] === '') {",
+									"        console.warn(`Seed warning: '${field}' is missing`);",
+									"    }",
+									"});"
+								]
+							}
+						},
+						{
+							"listen": "test",
+							"script": {
+								"type": "text/javascript",
+								"exec": [
+									"pm.test('Status is 200 or 201', function () {",
+									"    pm.expect(pm.response.code).to.be.oneOf([200, 201]);",
+									"});",
+									"pm.test('Response is JSON', function () {",
+									"    pm.response.to.be.json;",
+									"});",
+									"pm.test('Response time < 2000ms', function () {",
+									"    pm.expect(pm.response.responseTime).to.be.below(2000);",
+									"});",
+									"pm.test('Product has _id — saving as product_id', function () {",
+									"    const body = pm.response.json();",
+									"    pm.expect(body).to.have.property('_id');",
+									"    pm.collectionVariables.set('product_id', body._id);",
+									"    console.log('Seeded: Kesar Mango | _id:', body._id);",
+									"});",
+									"pm.test('Name and type match seed data', function () {",
+									"    const body = pm.response.json();",
+									"    pm.expect(body.name).to.equal('Kesar Mango');",
+									"    pm.expect(body.type).to.equal('fruits');",
+									"});",
+									"pm.test('Price is a positive number', function () {",
+									"    const body = pm.response.json();",
+									"    pm.expect(body.price).to.be.a('number').and.above(0);",
+									"});",
+									"pm.test('available flag is true', function () {",
+									"    const body = pm.response.json();",
+									"    pm.expect(body.available).to.equal(true);",
+									"});"
+								]
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"name\": \"Kesar Mango\",\n    \"desc\": \"great Quality of Mango\",\n    \"type\": \"fruits\",\n    \"banner\": \"http://codergogoi.com/youtube/images/kesar.jpeg\",\n    \"unit\": 1,\n    \"price\": 170,\n    \"available\": true,\n    \"suplier\": \"Golden seed firming\"\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{base_url}}/product/create",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"product",
+								"create"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Seed — Langra Mango (fruits)",
+					"event": [
+						{
+							"listen": "prerequest",
+							"script": {
+								"type": "text/javascript",
+								"exec": [
+									"const body = JSON.parse(pm.request.body.raw);",
+									"const required = ['name', 'type', 'unit', 'price'];",
+									"required.forEach(field => {",
+									"    if (body[field] === undefined || body[field] === null || body[field] === '') {",
+									"        console.warn(`Seed warning: '${field}' is missing`);",
+									"    }",
+									"});"
+								]
+							}
+						},
+						{
+							"listen": "test",
+							"script": {
+								"type": "text/javascript",
+								"exec": [
+									"pm.test('Status is 200 or 201', function () {",
+									"    pm.expect(pm.response.code).to.be.oneOf([200, 201]);",
+									"});",
+									"pm.test('Response is JSON', function () {",
+									"    pm.response.to.be.json;",
+									"});",
+									"pm.test('Response time < 2000ms', function () {",
+									"    pm.expect(pm.response.responseTime).to.be.below(2000);",
+									"});",
+									"pm.test('Product has _id — saving as product_id', function () {",
+									"    const body = pm.response.json();",
+									"    pm.expect(body).to.have.property('_id');",
+									"    pm.collectionVariables.set('product_id', body._id);",
+									"    console.log('Seeded: Langra Mango | _id:', body._id);",
+									"});",
+									"pm.test('Name and type match seed data', function () {",
+									"    const body = pm.response.json();",
+									"    pm.expect(body.name).to.equal('Langra Mango');",
+									"    pm.expect(body.type).to.equal('fruits');",
+									"});",
+									"pm.test('Price is a positive number', function () {",
+									"    const body = pm.response.json();",
+									"    pm.expect(body.price).to.be.a('number').and.above(0);",
+									"});",
+									"pm.test('available flag is true', function () {",
+									"    const body = pm.response.json();",
+									"    pm.expect(body.available).to.equal(true);",
+									"});"
+								]
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"name\": \"Langra Mango\",\n    \"desc\": \"great Quality of Mango\",\n    \"type\": \"fruits\",\n    \"banner\": \"http://codergogoi.com/youtube/images/langra.jpeg\",\n    \"unit\": 1,\n    \"price\": 280,\n    \"available\": true,\n    \"suplier\": \"Golden seed firming\"\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{base_url}}/product/create",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"product",
+								"create"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Seed — Broccoli (vegetables)",
+					"event": [
+						{
+							"listen": "prerequest",
+							"script": {
+								"type": "text/javascript",
+								"exec": [
+									"const body = JSON.parse(pm.request.body.raw);",
+									"const required = ['name', 'type', 'unit', 'price'];",
+									"required.forEach(field => {",
+									"    if (body[field] === undefined || body[field] === null || body[field] === '') {",
+									"        console.warn(`Seed warning: '${field}' is missing`);",
+									"    }",
+									"});"
+								]
+							}
+						},
+						{
+							"listen": "test",
+							"script": {
+								"type": "text/javascript",
+								"exec": [
+									"pm.test('Status is 200 or 201', function () {",
+									"    pm.expect(pm.response.code).to.be.oneOf([200, 201]);",
+									"});",
+									"pm.test('Response is JSON', function () {",
+									"    pm.response.to.be.json;",
+									"});",
+									"pm.test('Response time < 2000ms', function () {",
+									"    pm.expect(pm.response.responseTime).to.be.below(2000);",
+									"});",
+									"pm.test('Product has _id — saving as product_id', function () {",
+									"    const body = pm.response.json();",
+									"    pm.expect(body).to.have.property('_id');",
+									"    pm.collectionVariables.set('product_id', body._id);",
+									"    console.log('Seeded: Broccoli | _id:', body._id);",
+									"});",
+									"pm.test('Name and type match seed data', function () {",
+									"    const body = pm.response.json();",
+									"    pm.expect(body.name).to.equal('Broccoli');",
+									"    pm.expect(body.type).to.equal('vegetables');",
+									"});",
+									"pm.test('Price is a positive number', function () {",
+									"    const body = pm.response.json();",
+									"    pm.expect(body.price).to.be.a('number').and.above(0);",
+									"});",
+									"pm.test('available flag is true', function () {",
+									"    const body = pm.response.json();",
+									"    pm.expect(body.available).to.equal(true);",
+									"});"
+								]
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"name\": \"Broccoli\",\n    \"desc\": \"great Quality of Fresh Vegetable\",\n    \"type\": \"vegetables\",\n    \"banner\": \"http://codergogoi.com/youtube/images/broccoli.jpeg\",\n    \"unit\": 1,\n    \"price\": 280,\n    \"available\": true,\n    \"suplier\": \"Golden seed firming\"\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{base_url}}/product/create",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"product",
+								"create"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Seed — Cauliflower (vegetables)",
+					"event": [
+						{
+							"listen": "prerequest",
+							"script": {
+								"type": "text/javascript",
+								"exec": [
+									"const body = JSON.parse(pm.request.body.raw);",
+									"const required = ['name', 'type', 'unit', 'price'];",
+									"required.forEach(field => {",
+									"    if (body[field] === undefined || body[field] === null || body[field] === '') {",
+									"        console.warn(`Seed warning: '${field}' is missing`);",
+									"    }",
+									"});"
+								]
+							}
+						},
+						{
+							"listen": "test",
+							"script": {
+								"type": "text/javascript",
+								"exec": [
+									"pm.test('Status is 200 or 201', function () {",
+									"    pm.expect(pm.response.code).to.be.oneOf([200, 201]);",
+									"});",
+									"pm.test('Response is JSON', function () {",
+									"    pm.response.to.be.json;",
+									"});",
+									"pm.test('Response time < 2000ms', function () {",
+									"    pm.expect(pm.response.responseTime).to.be.below(2000);",
+									"});",
+									"pm.test('Product has _id — saving as product_id', function () {",
+									"    const body = pm.response.json();",
+									"    pm.expect(body).to.have.property('_id');",
+									"    pm.collectionVariables.set('product_id', body._id);",
+									"    console.log('Seeded: Cauliflower | _id:', body._id);",
+									"});",
+									"pm.test('Name and type match seed data', function () {",
+									"    const body = pm.response.json();",
+									"    pm.expect(body.name).to.equal('Cauliflower');",
+									"    pm.expect(body.type).to.equal('vegetables');",
+									"});",
+									"pm.test('Price is a positive number', function () {",
+									"    const body = pm.response.json();",
+									"    pm.expect(body.price).to.be.a('number').and.above(0);",
+									"});",
+									"pm.test('available flag is true', function () {",
+									"    const body = pm.response.json();",
+									"    pm.expect(body.available).to.equal(true);",
+									"});"
+								]
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"name\": \"Cauliflower\",\n    \"desc\": \"great Quality of Fresh Vegetable\",\n    \"type\": \"vegetables\",\n    \"banner\": \"http://codergogoi.com/youtube/images/cauliflower.jpeg\",\n    \"unit\": 1,\n    \"price\": 280,\n    \"available\": true,\n    \"suplier\": \"Golden seed firming\"\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{base_url}}/product/create",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"product",
+								"create"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Seed — Olive Oil (oils)",
+					"event": [
+						{
+							"listen": "prerequest",
+							"script": {
+								"type": "text/javascript",
+								"exec": [
+									"const body = JSON.parse(pm.request.body.raw);",
+									"const required = ['name', 'type', 'unit', 'price'];",
+									"required.forEach(field => {",
+									"    if (body[field] === undefined || body[field] === null || body[field] === '') {",
+									"        console.warn(`Seed warning: '${field}' is missing`);",
+									"    }",
+									"});"
+								]
+							}
+						},
+						{
+							"listen": "test",
+							"script": {
+								"type": "text/javascript",
+								"exec": [
+									"pm.test('Status is 200 or 201', function () {",
+									"    pm.expect(pm.response.code).to.be.oneOf([200, 201]);",
+									"});",
+									"pm.test('Response is JSON', function () {",
+									"    pm.response.to.be.json;",
+									"});",
+									"pm.test('Response time < 2000ms', function () {",
+									"    pm.expect(pm.response.responseTime).to.be.below(2000);",
+									"});",
+									"pm.test('Product has _id — saving as product_id', function () {",
+									"    const body = pm.response.json();",
+									"    pm.expect(body).to.have.property('_id');",
+									"    pm.collectionVariables.set('product_id', body._id);",
+									"    console.log('Seeded: Olive Oil | _id:', body._id);",
+									"});",
+									"pm.test('Name and type match seed data', function () {",
+									"    const body = pm.response.json();",
+									"    pm.expect(body.name).to.equal('Olive Oil');",
+									"    pm.expect(body.type).to.equal('oils');",
+									"});",
+									"pm.test('Price is a positive number', function () {",
+									"    const body = pm.response.json();",
+									"    pm.expect(body.price).to.be.a('number').and.above(0);",
+									"});",
+									"pm.test('available flag is true', function () {",
+									"    const body = pm.response.json();",
+									"    pm.expect(body.available).to.equal(true);",
+									"});"
+								]
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"name\": \"Olive Oil\",\n    \"desc\": \"great Quality of Oil\",\n    \"type\": \"oils\",\n    \"banner\": \"http://codergogoi.com/youtube/images/oliveoil.jpg\",\n    \"unit\": 1,\n    \"price\": 400,\n    \"available\": true,\n    \"suplier\": \"Golden seed firming\"\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{base_url}}/product/create",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"product",
+								"create"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Verify Category — fruits (expect >= 4)",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"type": "text/javascript",
+								"exec": [
+									"pm.test('Status is 200', function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"pm.test('Response is an array', function () {",
+									"    pm.response.to.be.json;",
+									"    pm.expect(pm.response.json()).to.be.an('array');",
+									"});",
+									"pm.test('At least 4 product(s) in category', function () {",
+									"    const body = pm.response.json();",
+									"    pm.expect(body.length).to.be.at.least(4);",
+									"});",
+									"pm.test('All items belong to category fruits', function () {",
+									"    const body = pm.response.json();",
+									"    body.forEach(p => {",
+									"        pm.expect(p.type).to.equal('fruits');",
+									"    });",
+									"});"
+								]
+							}
+						}
+					],
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/category/fruits",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"category",
+								"fruits"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Verify Category — vegetables (expect >= 2)",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"type": "text/javascript",
+								"exec": [
+									"pm.test('Status is 200', function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"pm.test('Response is an array', function () {",
+									"    pm.response.to.be.json;",
+									"    pm.expect(pm.response.json()).to.be.an('array');",
+									"});",
+									"pm.test('At least 2 product(s) in category', function () {",
+									"    const body = pm.response.json();",
+									"    pm.expect(body.length).to.be.at.least(2);",
+									"});",
+									"pm.test('All items belong to category vegetables', function () {",
+									"    const body = pm.response.json();",
+									"    body.forEach(p => {",
+									"        pm.expect(p.type).to.equal('vegetables');",
+									"    });",
+									"});"
+								]
+							}
+						}
+					],
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/category/vegetables",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"category",
+								"vegetables"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Verify Category — oils (expect >= 1)",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"type": "text/javascript",
+								"exec": [
+									"pm.test('Status is 200', function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"pm.test('Response is an array', function () {",
+									"    pm.response.to.be.json;",
+									"    pm.expect(pm.response.json()).to.be.an('array');",
+									"});",
+									"pm.test('At least 1 product(s) in category', function () {",
+									"    const body = pm.response.json();",
+									"    pm.expect(body.length).to.be.at.least(1);",
+									"});",
+									"pm.test('All items belong to category oils', function () {",
+									"    const body = pm.response.json();",
+									"    body.forEach(p => {",
+									"        pm.expect(p.type).to.equal('oils');",
+									"    });",
+									"});"
+								]
+							}
+						}
+					],
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/category/oils",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"category",
+								"oils"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Verify — All 7 Products Seeded",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"type": "text/javascript",
+								"exec": [
+									"pm.test('Status is 200', function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"pm.test('At least 7 products in catalog', function () {",
+									"    const body = pm.response.json();",
+									"    pm.expect(body).to.be.an('array');",
+									"    pm.expect(body.length).to.be.at.least(7);",
+									"    console.log('Total products in catalog: ' + body.length);",
+									"});",
+									"pm.test('All seeded product names present', function () {",
+									"    const body = pm.response.json();",
+									"    const names = body.map(p => p.name);",
+									"    const expected = ['alphonso mango','Apples','Kesar Mango','Langra Mango','Broccoli','Cauliflower','Olive Oil'];",
+									"    expected.forEach(n => pm.expect(names, 'Missing: ' + n).to.include(n));",
+									"});",
+									"pm.test('No product has price <= 0', function () {",
+									"    const body = pm.response.json();",
+									"    body.forEach(p => pm.expect(p.price).to.be.above(0));",
+									"});"
+								]
+							}
+						}
+					],
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								""
+							]
+						}
+					},
+					"response": []
+				}
+			],
+			"description": "Run this folder via Collection Runner to seed all 7 sample products in one go.\n\nRun order:\n  1. 7x Create Product (fruits, vegetables, oils)\n  2. 3x Category Verification (fruits=4, vegetables=2, oils=1)\n  3. 1x Total Count Check (all 7 names present)\n\nAfter seeding, product_id holds the last created product _id."
+		},
+		{
+			"name": "Customer Service",
+			"item": [
+				{
+					"name": "Signup",
+					"event": [
+						{
+							"listen": "prerequest",
+							"script": {
+								"type": "text/javascript",
+								"exec": [
+									"const body = JSON.parse(pm.request.body.raw);",
+									"if (!body.email || !body.password) {",
+									"    console.error('email and password are required for signup');",
+									"}"
+								]
+							}
+						},
+						{
+							"listen": "test",
+							"script": {
+								"type": "text/javascript",
+								"exec": [
+									"pm.test('Status is 200 or 201', function () {",
+									"    pm.expect(pm.response.code).to.be.oneOf([200, 201]);",
+									"});",
+									"",
+									"pm.test('Response is JSON', function () {",
+									"    pm.response.to.be.json;",
+									"});",
+									"",
+									"pm.test('Response time < 3000ms', function () {",
+									"    pm.expect(pm.response.responseTime).to.be.below(3000);",
+									"});",
+									"",
+									"pm.test('No password returned in response', function () {",
+									"    const body = pm.response.json();",
+									"    pm.expect(body).to.not.have.property('password');",
+									"});"
+								]
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"email\": \"test@example.com\",\n    \"password\": \"password123\",\n    \"phone\": \"1234567890\"\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{base_url}}/customer/signup",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"customer",
+								"signup"
+							]
+						},
+						"description": "Registers a new customer account."
+					},
+					"response": []
+				},
+				{
+					"name": "Login",
+					"event": [
+						{
+							"listen": "prerequest",
+							"script": {
+								"exec": [
+									"const body = JSON.parse(pm.request.body.raw);",
+									"if (!body.email || !body.password) {",
+									"    console.error('email and password are required for login');",
+									"}"
+								],
+								"type": "text/javascript",
+								"packages": {}
+							}
+						},
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test('Status is 200', function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"pm.test('Response is JSON', function () {",
+									"    pm.response.to.be.json;",
+									"});",
+									"",
+									"pm.test('Response time < 3000ms', function () {",
+									"    pm.expect(pm.response.responseTime).to.be.below(3000);",
+									"});",
+									"",
+									"pm.test('Token is present and saved', function () {",
+									"    const body = pm.response.json();",
+									"    pm.expect(body).to.have.property('token');",
+									"    pm.expect(body.token).to.be.a('string').and.not.empty;",
+									"    pm.collectionVariables.set('user_token', body.token);",
+									"    console.log('Token saved successfully');",
+									"});",
+									"",
+									"pm.test('No password returned in response', function () {",
+									"    const body = pm.response.json();",
+									"    pm.expect(body).to.not.have.property('password');",
+									"});"
+								],
+								"type": "text/javascript",
+								"packages": {}
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"email\": \"test@example.com\",\n    \"password\": \"password123\"\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{base_url}}/customer/login",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"customer",
+								"login"
+							]
+						},
+						"description": "Authenticates a customer and auto-saves the JWT as `user_token`."
+					},
+					"response": []
+				},
+				{
+					"name": "Get Profile",
+					"event": [
+						{
+							"listen": "prerequest",
+							"script": {
+								"exec": [
+									"const token = pm.collectionVariables.get('user_token');",
+									"if (!token || token === '') {",
+									"    console.warn('user_token is not set. Run \"Login\" first.');",
+									"}"
+								],
+								"type": "text/javascript",
+								"packages": {}
+							}
+						},
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test('Status is 200', function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"pm.test('Response is JSON', function () {",
+									"    pm.response.to.be.json;",
+									"});",
+									"",
+									"pm.test('Profile has email', function () {",
+									"    const body = pm.response.json();",
+									"    pm.expect(body).to.have.property('email');",
+									"});",
+									"",
+									"pm.test('No password returned in profile', function () {",
+									"    const body = pm.response.json();",
+									"    pm.expect(body).to.not.have.property('password');",
+									"});",
+									"",
+									"pm.test('401 not returned (token valid)', function () {",
+									"    pm.expect(pm.response.code).to.not.equal(401);",
+									"});"
+								],
+								"type": "text/javascript",
+								"packages": {}
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{user_token}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/customer/profile",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"customer",
+								"profile"
+							]
+						},
+						"description": "Returns the authenticated customer's profile. Requires `user_token` (auto-set by Login)."
+					},
+					"response": []
+				},
+				{
+					"name": "Get Profile Copy",
+					"event": [
+						{
+							"listen": "prerequest",
+							"script": {
+								"exec": [
+									"const token = pm.collectionVariables.get('user_token');",
+									"if (!token || token === '') {",
+									"    console.warn('user_token is not set. Run \"Login\" first.');",
+									"}"
+								],
+								"type": "text/javascript",
+								"packages": {}
+							}
+						},
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test('Status is 200', function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"pm.test('Response is JSON', function () {",
+									"    pm.response.to.be.json;",
+									"});",
+									"",
+									"pm.test('Profile has email', function () {",
+									"    const body = pm.response.json();",
+									"    pm.expect(body).to.have.property('email');",
+									"});",
+									"",
+									"pm.test('No password returned in profile', function () {",
+									"    const body = pm.response.json();",
+									"    pm.expect(body).to.not.have.property('password');",
+									"});",
+									"",
+									"pm.test('401 not returned (token valid)', function () {",
+									"    pm.expect(pm.response.code).to.not.equal(401);",
+									"});"
+								],
+								"type": "text/javascript",
+								"packages": {}
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{user_token}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/customer/wishlist",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"customer",
+								"wishlist"
+							]
+						},
+						"description": "Returns the authenticated customer's profile. Requires `user_token` (auto-set by Login)."
+					},
+					"response": []
+				},
+				{
+					"name": "Get Customer Orders",
+					"event": [
+						{
+							"listen": "prerequest",
+							"script": {
+								"exec": [
+									"const token = pm.collectionVariables.get('user_token');",
+									"if (!token || token === '') {",
+									"    console.warn('user_token is not set. Run \"Login\" first.');",
+									"}"
+								],
+								"type": "text/javascript",
+								"packages": {}
+							}
+						},
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test('Status is 200', function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"pm.test('Response is JSON', function () {",
+									"    pm.response.to.be.json;",
+									"});",
+									"",
+									"pm.test('Returns an array of orders', function () {",
+									"    const body = pm.response.json();",
+									"    pm.expect(body).to.be.an('array');",
+									"});"
+								],
+								"type": "text/javascript",
+								"packages": {}
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{user_token}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/customer/shoping-details",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"customer",
+								"shoping-details"
+							]
+						},
+						"description": "Returns order history for the authenticated customer."
+					},
+					"response": []
+				}
+			],
+			"description": "Endpoints for the Customer microservice."
+		},
+		{
+			"name": "Shopping Service",
+			"item": [
+				{
+					"name": "Get WhoAmI (Shopping)",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test('Status is 200', function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"pm.test('Response is JSON', function () {",
+									"    pm.response.to.be.json;",
+									"});",
+									"",
+									"pm.test('Response has service name', function () {",
+									"    const body = pm.response.json();",
+									"    pm.expect(body).to.have.property('service');",
+									"});"
+								],
+								"type": "text/javascript",
+								"packages": {}
+							}
+						}
+					],
+					"protocolProfileBehavior": {
+						"disableBodyPruning": true
+					},
+					"request": {
+						"method": "GET",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{base_url}}/shopping/whoami",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"shopping",
+								"whoami"
+							]
+						},
+						"description": "Returns service identity info for the Shopping service."
+					},
+					"response": []
+				},
+				{
+					"name": "Get Cart",
+					"event": [
+						{
+							"listen": "prerequest",
+							"script": {
+								"type": "text/javascript",
+								"exec": [
+									"const token = pm.collectionVariables.get('user_token');",
+									"if (!token || token === '') {",
+									"    console.warn('user_token is not set. Run \"Login\" first.');",
+									"}"
+								]
+							}
+						},
+						{
+							"listen": "test",
+							"script": {
+								"type": "text/javascript",
+								"exec": [
+									"pm.test('Status is 200', function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"pm.test('Response is JSON', function () {",
+									"    pm.response.to.be.json;",
+									"});",
+									"",
+									"pm.test('Cart has items array', function () {",
+									"    const body = pm.response.json();",
+									"    pm.expect(body).to.have.property('items');",
+									"    pm.expect(body.items).to.be.an('array');",
+									"});",
+									"",
+									"pm.test('401 not returned (token valid)', function () {",
+									"    pm.expect(pm.response.code).to.not.equal(401);",
+									"});"
+								]
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{user_token}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/shopping/cart",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"shopping",
+								"cart"
+							]
+						},
+						"description": "Returns the current user's shopping cart. Requires `user_token`."
+					},
+					"response": []
+				},
+				{
+					"name": "Add to Cart",
+					"event": [
+						{
+							"listen": "prerequest",
+							"script": {
+								"exec": [
+									"const token = pm.collectionVariables.get('user_token');",
+									"if (!token || token === '') {",
+									"    console.warn('user_token is not set. Run \"Login\" first.');",
+									"}",
+									"",
+									"const productId = pm.collectionVariables.get('product_id');",
+									"if (!productId || productId === '') {",
+									"    console.warn('product_id is not set. Run \"Create Product\" first, or set it manually.');",
+									"}"
+								],
+								"type": "text/javascript",
+								"packages": {}
+							}
+						},
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test('Status is 200 or 201', function () {",
+									"    pm.expect(pm.response.code).to.be.oneOf([200, 201]);",
+									"});",
+									"",
+									"pm.test('Response is JSON', function () {",
+									"    pm.response.to.be.json;",
+									"});",
+									"",
+									"pm.test('Response time < 2000ms', function () {",
+									"    pm.expect(pm.response.responseTime).to.be.below(2000);",
+									"});",
+									"",
+									"pm.test('Cart returned in response', function () {",
+									"    const body = pm.response.json();",
+									"    pm.expect(body).to.have.property('items');",
+									"    pm.expect(body.items).to.be.an('array').and.not.empty;",
+									"});",
+									"",
+									"pm.test('401 not returned (token valid)', function () {",
+									"    pm.expect(pm.response.code).to.not.equal(401);",
+									"});"
+								],
+								"type": "text/javascript",
+								"packages": {}
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{user_token}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "PUT",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"_id\": \"{{product_id}}\",\n    \"name\": \"alphonso mango\",\n    \"price\": 300,\n    \"unit\": 1,\n    \"qty\": 1\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{base_url}}/shopping/cart",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"shopping",
+								"cart"
+							]
+						},
+						"description": "Adds a product to the cart. Uses `product_id` (auto-set by Create Product) and `user_token` (auto-set by Login)."
+					},
+					"response": []
+				},
+				{
+					"name": "Remove from Cart",
+					"event": [
+						{
+							"listen": "prerequest",
+							"script": {
+								"exec": [
+									"const token = pm.collectionVariables.get('user_token');",
+									"if (!token || token === '') {",
+									"    console.warn('user_token is not set. Run \"Login\" first.');",
+									"}",
+									"",
+									"const productId = pm.collectionVariables.get('product_id');",
+									"if (!productId || productId === '') {",
+									"    console.warn('product_id is not set. Run \"Create Product\" first.');",
+									"}"
+								],
+								"type": "text/javascript",
+								"packages": {}
+							}
+						},
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test('Status is 200', function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"pm.test('Response is JSON', function () {",
+									"    pm.response.to.be.json;",
+									"});",
+									"",
+									"pm.test('Cart returned in response', function () {",
+									"    const body = pm.response.json();",
+									"    pm.expect(body).to.have.property('items');",
+									"});"
+								],
+								"type": "text/javascript",
+								"packages": {}
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{user_token}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "DELETE",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"_id\": \"{{product_id}}\"\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{base_url}}/shopping/cart/{{product_id}}",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"shopping",
+								"cart",
+								"{{product_id}}"
+							]
+						},
+						"description": "Removes a product from the cart by product `_id`."
+					},
+					"response": []
+				},
+				{
+					"name": "Create Order",
+					"event": [
+						{
+							"listen": "prerequest",
+							"script": {
+								"exec": [
+									"const token = pm.collectionVariables.get('user_token');",
+									"if (!token || token === '') {",
+									"    console.warn('user_token is not set. Run \"Login\" first.');",
+									"}"
+								],
+								"type": "text/javascript",
+								"packages": {}
+							}
+						},
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test('Status is 200 or 201', function () {",
+									"    pm.expect(pm.response.code).to.be.oneOf([200, 201]);",
+									"});",
+									"",
+									"pm.test('Response is JSON', function () {",
+									"    pm.response.to.be.json;",
+									"});",
+									"",
+									"pm.test('Order has _id', function () {",
+									"    const body = pm.response.json();",
+									"    pm.expect(body).to.have.property('_id');",
+									"});"
+								],
+								"type": "text/javascript",
+								"packages": {}
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{user_token}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"txnNumber\": \"TXN-{{$randomInt}}\"\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{base_url}}/shopping/order",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"shopping",
+								"order"
+							]
+						},
+						"description": "Converts the current cart into an order. Uses `user_token`."
+					},
+					"response": []
+				}
+			],
+			"description": "Endpoints for the Shopping/Cart microservice."
+		},
+		{
+			"name": "Health & Sanity Checks",
+			"item": [
+				{
+					"name": "Nginx Proxy Health",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"type": "text/javascript",
+								"exec": [
+									"pm.test('Proxy is reachable (not 502/504)', function () {",
+									"    pm.expect(pm.response.code).to.not.be.oneOf([502, 503, 504]);",
+									"});",
+									"",
+									"pm.test('Response time < 1000ms', function () {",
+									"    pm.expect(pm.response.responseTime).to.be.below(1000);",
+									"});"
+								]
+							}
+						}
+					],
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								""
+							]
+						},
+						"description": "Confirms the Nginx proxy itself is responding."
+					},
+					"response": []
+				},
+				{
+					"name": "Products Service Health",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"type": "text/javascript",
+								"exec": [
+									"pm.test('Products service reachable', function () {",
+									"    pm.expect(pm.response.code).to.not.be.oneOf([502, 503, 504]);",
+									"});",
+									"",
+									"pm.test('Response time < 1000ms', function () {",
+									"    pm.expect(pm.response.responseTime).to.be.below(1000);",
+									"});"
+								]
+							}
+						}
+					],
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/whoami",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"whoami"
+							]
+						},
+						"description": "Confirms the Products microservice is reachable."
+					},
+					"response": []
+				},
+				{
+					"name": "Shopping Service Health",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"type": "text/javascript",
+								"exec": [
+									"pm.test('Shopping service reachable', function () {",
+									"    pm.expect(pm.response.code).to.not.be.oneOf([502, 503, 504]);",
+									"});",
+									"",
+									"pm.test('Response time < 1000ms', function () {",
+									"    pm.expect(pm.response.responseTime).to.be.below(1000);",
+									"});"
+								]
+							}
+						}
+					],
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/shopping/whoami",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"shopping",
+								"whoami"
+							]
+						},
+						"description": "Confirms the Shopping microservice is reachable."
+					},
+					"response": []
+				}
+			],
+			"description": "Quick checks to verify all services are reachable through the Nginx proxy."
+		}
+	],
+	"variable": [
+		{
+			"key": "base_url",
+			"value": "http://localhost:8000",
+			"type": "string"
+		},
+		{
+			"key": "user_token",
+			"value": "",
+			"type": "string"
+		},
+		{
+			"key": "product_id",
+			"value": "",
+			"type": "string"
+		}
+	]
+}
