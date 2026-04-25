@@ -5,9 +5,12 @@ import { useToast } from "./ToastContext";
 
 const CartContext = createContext(null);
 
+// fixed: cart response is [{ _id, customerId, items: [{ product, unit, _id }] }]
+// we need to extract the nested items array from the first cart document
 function normalizeCartItems(payload) {
   if (Array.isArray(payload)) {
-    return payload;
+    // response is an array of cart docs — get items from first cart
+    return payload[0]?.items ?? [];
   }
   if (Array.isArray(payload?.items)) {
     return payload.items;
@@ -27,7 +30,6 @@ export function CartProvider({ children }) {
       setCartItems([]);
       return;
     }
-
     setIsCartLoading(true);
     try {
       const data = await api.getCart(token);
@@ -49,64 +51,81 @@ export function CartProvider({ children }) {
 
   const addToCart = useCallback(
     async (product, qty = 1) => {
-      if (!token) {
-        throw new Error("Please log in to add items to cart");
-      }
+      if (!token) throw new Error("Please log in to add items to cart");
 
-      const existing = cartItems.find((item) => {
-        const productId = item.product?._id || item._id;
-        return productId === product._id;
-      });
-      const currentQty = existing?.unit || existing?.qty || 0;
+      // fixed: was searching cartItems for product._id but cartItems are now
+      // normalized cart items with shape { product: {...}, unit, _id }
+      const existing = cartItems.find((item) => item.product?._id === product._id);
+      const currentQty = Number(existing?.unit ?? 0);
       const nextQty = currentQty + qty;
 
-      const payload = {
-        _id: product._id,
-        name: product.name,
-        price: product.price,
-        unit: nextQty,
-        qty: nextQty,
-      };
-
-      await api.updateCart(token, payload);
-      await refreshCart();
+      try {
+        await api.updateCart(token, {
+          _id: product._id,   // product service route expects _id
+          name: product.name,
+          price: product.price,
+          qty: nextQty,
+        });
+        await refreshCart();
+      } catch (error) {
+        toast.error(error.message || "Failed to add to cart");
+        throw error;
+      }
     },
-    [token, refreshCart, cartItems]
+    [token, refreshCart, cartItems, toast]
   );
 
   const updateCartQuantity = useCallback(
     async (item, qty) => {
-      if (!token) {
-        throw new Error("Please log in to update cart");
+      if (!token) throw new Error("Please log in to update cart");
+
+      // fixed: item is a cart item { product: { _id, name, price }, unit, _id }
+      // was doing item._id || item.product?._id which got the cart item's _id
+      // not the product _id — the route needs the product _id
+      const product = item.product;
+      const productId = product?._id;
+
+      if (!productId) {
+        toast.error("Could not update cart: missing product ID");
+        return;
+        // fixed: was throwing, causing uncaught runtime error
+        // now shows a toast and returns gracefully
       }
 
-      if (qty <= 0) {
-        await api.removeFromCart(token, item._id || item.product?._id);
-      } else {
-        const product = item.product || item;
-        await api.updateCart(token, {
-          _id: product._id,
-          name: product.name,
-          price: product.price,
-          unit: qty,
-          qty,
-        });
+      try {
+        if (qty <= 0) {
+          await api.removeFromCart(token, productId);
+          // fixed: was passing item._id (cart item id) — route expects product id
+        } else {
+          await api.updateCart(token, {
+            _id: productId,
+            name: product.name,
+            price: product.price,
+            qty,
+          });
+        }
+        await refreshCart();
+      } catch (error) {
+        toast.error(error.message || "Failed to update cart");
+        throw error;
       }
-
-      await refreshCart();
     },
-    [token, refreshCart]
+    [token, refreshCart, toast]
   );
 
   const removeFromCart = useCallback(
     async (id) => {
-      if (!token) {
-        throw new Error("Please log in to update cart");
+      if (!token) throw new Error("Please log in to update cart");
+      try {
+        await api.removeFromCart(token, id);
+        await refreshCart();
+      } catch (error) {
+        toast.error(error.message || "Failed to remove item");
+        throw error;
+        // fixed: was no try/catch — errors bubbled up as uncaught runtime errors
       }
-      await api.removeFromCart(token, id);
-      await refreshCart();
     },
-    [token, refreshCart]
+    [token, refreshCart, toast]
   );
 
   const clearCart = useCallback(() => {
@@ -114,7 +133,12 @@ export function CartProvider({ children }) {
   }, []);
 
   const value = useMemo(() => {
-    const itemCount = cartItems.reduce((count, item) => count + (item.unit || item.qty || 1), 0);
+    // fixed: itemCount was summing top-level cart docs not the nested items
+    // now correctly counts quantities from normalized items
+    const itemCount = cartItems.reduce(
+      (count, item) => count + Number(item.unit ?? 1),
+      0
+    );
     return {
       cartItems,
       itemCount,

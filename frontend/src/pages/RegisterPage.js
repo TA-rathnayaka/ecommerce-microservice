@@ -31,7 +31,7 @@ export function RegisterPage() {
         onSubmit={handleRegister}
         footer={
           <p>
-            Already registered? <Link className="font-semibold text-aqua" to="/login">Go to login</Link>
+            Already registered? <Link className="font-bold text-moss transition hover:text-moss/80" to="/login">Go to login</Link>
           </p>
         }
       />

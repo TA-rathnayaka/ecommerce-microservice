@@ -28,7 +28,7 @@ class ProductRepository {
 
     async FindByCategory(category){
 
-        const products = await ProductModel.find({ type: category});
+        const products = await ProductModel.find({ type: { $regex: `^${category}$`, $options: 'i' } });
 
         return products;
     }

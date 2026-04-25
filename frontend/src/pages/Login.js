@@ -46,19 +46,18 @@ const Login = () => {
     }
   }, [token, dispatch]);
 
-  const handleLogin = async () => {
-    if (!email || !password) {
-      toast.error("Please enter your email and password.");
-      return;
-    }
-    setLoading(true);
+  const handleLogin = async ({ email, password }) => {
     try {
-      await dispatch(onLogin({ email, password }));
-      toast.success("Welcome back!");
-    } catch {
-      toast.error("Login failed. Check your credentials.");
-    } finally {
-      setLoading(false);
+      const data = await api.login({ email, password });
+      if (!data?.token) {
+        throw new Error("Login failed. Please try again.");
+      }
+      login(data.token);
+      toast.success("Logged in successfully");
+      navigate(fromPath, { replace: true });
+    } catch (error) {
+      toast.error(error.message || "Login failed");
+      // error is fully handled here — no re-throw needed
     }
   };
 

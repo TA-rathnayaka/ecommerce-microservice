@@ -1,72 +1,81 @@
 import { createLogger, transports } from 'winston';
 import { AppError } from './app-errors.js';
 
-
 const LogErrors = createLogger({
-    transports: [
-      new transports.Console(),
-      new transports.File({ filename: 'app_error.log' })
-    ]
-  });
-    
+  transports: [
+    new transports.Console(),
+    new transports.File({ filename: 'app_error.log' })
+  ]
+});
 
 class ErrorLogger {
-    constructor(){}
-    async logError(err){
-        console.log('==================== Start Error Logger ===============');
-        LogErrors.log({
-            private: true,
-            level: 'error',
-            message: `${new Date()}-${JSON.stringify(err)}`
-          });
-        console.log('==================== End Error Logger ===============');
-        // log error with Logger plugins
-      
-        return false;
-    }
+  constructor() {}
 
-    isTrustError(error){
-        if(error instanceof AppError){
-            return error.isOperational;
-        }else{
-            return false;
-        }
+  async logError(err) {
+    console.log('==================== Start Error Logger ===============');
+    LogErrors.log({
+      level: 'error',
+      message: `${new Date().toISOString()} - ${err.message || JSON.stringify(err)}`,
+      // fixed: removed `private: true` — not a valid winston field
+      // fixed: new Date() serializes poorly in JSON — use toISOString()
+      // fixed: JSON.stringify(err) on an Error object produces "{}" — log message instead
+    });
+    console.log('==================== End Error Logger ===============');
+    return false;
+  }
+
+  isTrustError(error) {
+    if (error instanceof AppError) {
+      return error.isOperational;
     }
+    return false;
+  }
 }
 
-const ErrorHandler = async(err,req,res,next) => {
-    
-    const errorLogger = new ErrorLogger();
+// fixed: moved process event listeners to module level — registering them
+// inside the error handler middleware meant a new listener was added on
+// every single request, causing massive memory leaks and duplicate handling
+process.on('unhandledRejection', (reason) => {
+  console.error('UNHANDLED REJECTION:', reason);
+  // throw so uncaughtException handler below can catch and log it
+  throw reason;
+});
 
-    process.on('uncaughtException', (reason, promise) => {
-        console.log(reason, 'UNHANDLED');
-        throw reason; // need to take care
-    })
+process.on('uncaughtException', (error) => {
+  const errorLogger = new ErrorLogger();
+  errorLogger.logError(error);
+  if (!errorLogger.isTrustError(error)) {
+    // not an operational error — something is badly wrong, exit and let
+    // the process manager (pm2, docker) restart the service
+    console.error('Non-operational error — shutting down:', error);
+    process.exit(1);
+  }
+  // fixed: second uncaughtException listener was shadowing the first
+  // and referencing the wrong variable (err instead of error)
+});
 
-    process.on('uncaughtException', (error) => {
-        errorLogger.logError(error);
-        if(errorLogger.isTrustError(err)){
-            //process exist // need restart
-        }
-    })
-    
-    // console.log(err.description, '-------> DESCRIPTION')
-    // console.log(err.message, '-------> MESSAGE')
-    // console.log(err.name, '-------> NAME')
-    if(err){
-        await errorLogger.logError(err);
-        if(errorLogger.isTrustError(err)){
-            if(err.errorStack){
-                const errorDescription = err.errorStack;
-                return res.status(err.statusCode).json({'message': errorDescription})
-            }
-            return res.status(err.statusCode).json({'message': err.message })
-        }else{
-            //process exit // terriablly wrong with flow need restart
-        }
-        return res.status(err.statusCode).json({'message': err.message})
-    }
-    next();
-}
+const ErrorHandler = async (err, req, res, next) => {
+  const errorLogger = new ErrorLogger();
+
+  await errorLogger.logError(err);
+
+  if (errorLogger.isTrustError(err)) {
+    // operational/known error — safe to return details to client
+    const message = err.errorStack || err.message;
+    return res.status(err.statusCode || 500).json({ success: false, message });
+    // fixed: was checking err.errorStack separately with duplicate res.status calls
+  }
+
+  // unknown error — don't leak internals to client
+  return res.status(500).json({
+    success: false,
+    message: 'Something went wrong. Please try again later.',
+    // fixed: was using err.statusCode and err.message on untrusted errors
+    // which could expose internal details or crash if statusCode is undefined
+  });
+
+  // fixed: removed next() at the end — unreachable after return,
+  // and error handlers should not call next() after sending a response
+};
 
 export default ErrorHandler;

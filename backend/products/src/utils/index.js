@@ -1,97 +1,84 @@
 import bcrypt from 'bcryptjs';
 import jwt from 'jsonwebtoken';
-import axios from 'axios';
 import amqplib from 'amqplib';
+// fixed: removed unused axios import
 
 import {
   APP_SECRET,
-  BASE_URL,
   EXCHANGE_NAME,
   MSG_QUEUE_URL,
 } from '../config/index.js';
+// fixed: removed unused BASE_URL import
 
-//Utility functions
-export const GenerateSalt = async () => {
-  return await bcrypt.genSalt();
+// Utility functions
+
+// fixed: removed GenerateSalt — bcrypt handles salt internally
+export const GeneratePassword = async (password) => {
+  return await bcrypt.hash(password, 12); // 12 salt rounds
 };
 
-export const GeneratePassword = async (password, salt) => {
-  return await bcrypt.hash(password, salt);
-};
-
-export const ValidatePassword = async (
-  enteredPassword,
-  savedPassword,
-  salt
-) => {
-  return (await this.GeneratePassword(enteredPassword, salt)) === savedPassword;
+export const ValidatePassword = async (enteredPassword, savedPassword) => {
+  return await bcrypt.compare(enteredPassword, savedPassword);
+  // fixed: was calling this.GeneratePassword() — `this` is undefined in ES modules
+  // fixed: removed salt param — bcrypt.compare extracts salt from the hash itself
 };
 
 export const GenerateSignature = async (payload) => {
   try {
-    return await jwt.sign(payload, APP_SECRET, { expiresIn: "30d" });
+    return jwt.sign(payload, APP_SECRET, { expiresIn: '30d' });
+    // fixed: jwt.sign is synchronous — await was unnecessary
   } catch (error) {
-    console.log(error);
-    return error;
+    console.error('Error generating signature:', error);
+    throw new Error('Could not generate token');
+    // fixed: was returning the error object — callers expected a string token
   }
 };
 
 export const ValidateSignature = async (req) => {
   try {
-    const signature = req.get("Authorization");
-    console.log(signature);
-    const payload = await jwt.verify(signature.split(" ")[1], APP_SECRET);
+    const signature = req.get('Authorization');
+    if (!signature) return false;
+    // fixed: was crashing with TypeError if Authorization header was missing
+    const payload = jwt.verify(signature.split(' ')[1], APP_SECRET);
+    // fixed: jwt.verify is synchronous — await was unnecessary
     req.user = payload;
     return true;
   } catch (error) {
-    console.log(error);
+    console.error('Invalid signature:', error);
     return false;
   }
 };
 
 export const FormateData = (data) => {
-  if (data) {
+  if (data !== null && data !== undefined) {
     return { data };
   } else {
-    throw new Error("Data Not found!");
+    throw new Error('Data Not found!');
   }
+  // fixed: was checking if(data) which throws on valid falsy values like 0 or false
 };
 
-//Raise Events
-export const PublishCustomerEvent = async (payload) => {
-  axios.post("http://customer:8001/app-events/", {
-    payload,
-  });
-
-  //     axios.post(`${BASE_URL}/customer/app-events/`,{
-  //         payload
-  //     });
-};
-
-export const PublishShoppingEvent = async (payload) => {
-  // axios.post('http://gateway:8000/shopping/app-events/',{
-  //         payload
-  // });
-
-  axios.post(`http://shopping:8003/app-events/`, {
-    payload,
-  });
-};
-
-//Message Broker
+// Message Broker
 
 export const CreateChannel = async () => {
   try {
     const connection = await amqplib.connect(MSG_QUEUE_URL);
     const channel = await connection.createChannel();
-    await channel.assertQueue(EXCHANGE_NAME, "direct", { durable: true });
+    await channel.assertExchange(EXCHANGE_NAME, 'direct', { durable: true });
+    // fixed: was assertQueue() — this was creating a queue named after the exchange
+    // instead of creating the actual exchange
     return channel;
   } catch (err) {
+    console.error('Error creating RabbitMQ channel:', err);
     throw err;
   }
 };
 
 export const PublishMessage = (channel, service, msg) => {
   channel.publish(EXCHANGE_NAME, service, Buffer.from(msg));
-  console.log("Sent: ", msg);
+  console.log('Sent: ', msg);
 };
+
+// fixed: removed PublishCustomerEvent and PublishShoppingEvent entirely
+// these were HTTP-based event publishers replaced by RabbitMQ (PublishMessage)
+// keeping dead code alongside the working implementation causes confusion

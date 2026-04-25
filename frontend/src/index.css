@@ -1,4 +1,8 @@
-@import url("https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600;700&family=Space+Grotesk:wght@500;600;700&display=swap");
+@import url("https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600;700&family=Outfit:wght@400;500;600;700&display=swap");
+
+html {
+  scroll-behavior: smooth;
+}
 
 @tailwind base;
 @tailwind components;
@@ -8,10 +12,7 @@ body {
   margin: 0;
   font-family: "IBM Plex Sans", sans-serif;
   color: #1c1f2a;
-  background:
-    radial-gradient(circle at 10% 15%, rgba(29, 120, 116, 0.2), transparent 35%),
-    radial-gradient(circle at 85% 10%, rgba(232, 93, 4, 0.15), transparent 40%),
-    linear-gradient(180deg, #f7f0e8 0%, #efe4d6 100%);
+  background-color: #ffffff;
   min-block-size: 100vh;
 }
 
@@ -20,10 +21,7 @@ body {
 }
 
 .bg-pattern {
-  background-image:
-    linear-gradient(120deg, rgba(255, 255, 255, 0.16) 1px, transparent 1px),
-    linear-gradient(60deg, rgba(255, 255, 255, 0.1) 1px, transparent 1px);
-  background-size: 26px 26px;
+  background-color: transparent;
 }
 
 a {

@@ -4,14 +4,14 @@ module.exports = {
   theme: {
     extend: {
       fontFamily: {
-        display: ["Space Grotesk", "sans-serif"],
+        display: ["Outfit", "sans-serif"],
         body: ["IBM Plex Sans", "sans-serif"],
       },
       colors: {
         ink: "#1C1F2A",
         clay: "#F7F0E8",
         ember: "#E85D04",
-        moss: "#3A7D44",
+        moss: "#2D5A34",
         aqua: "#1D7874",
       },
       boxShadow: {

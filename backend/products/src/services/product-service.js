@@ -1,73 +1,90 @@
+// product-service.js
 import { ProductRepository } from '../database/index.js';
 import { FormateData } from '../utils/index.js';
+import { APIError, NotFoundError, BadRequestError } from '../utils/app-errors.js';
 
-// All Business logic will be here
 class ProductService {
 
-    constructor(){
-        this.repository = new ProductRepository();
+  constructor() {
+    this.repository = new ProductRepository();
+  }
+
+  async CreateProduct(productInputs) {
+    try {
+      const productResult = await this.repository.CreateProduct(productInputs);
+      return FormateData(productResult);
+    } catch (err) {
+      throw new APIError('Could not create product', 500, err.message);
     }
-    
+  }
 
-    async CreateProduct(productInputs){
-
-        const productResult = await this.repository.CreateProduct(productInputs)
-        return FormateData(productResult);
+  async GetProducts() {
+    try {
+      const products = await this.repository.Products();
+      const categories = Object.keys(
+        products.reduce((acc, { type }) => ({ ...acc, [type]: true }), {})
+      );
+      return FormateData({ products, categories });
+    } catch (err) {
+      throw new APIError('Could not fetch products', 500, err.message);
     }
-    
-    async GetProducts(){
-        const products = await this.repository.Products();
+  }
 
-        let categories = {};
-
-        products.map(({ type }) => {
-            categories[type] = type;
-        });
-        
-        return FormateData({
-            products,
-            categories:  Object.keys(categories)  
-           })
-
+  async GetProductDescription(productId) {
+    try {
+      const product = await this.repository.FindById(productId);
+      if (!product) throw new NotFoundError(`Product with id ${productId} not found`);
+      // fixed: was relying on FormateData to throw a generic Error
+      // now throws a proper NotFoundError with a 404 status code
+      return FormateData(product);
+    } catch (err) {
+      if (err instanceof NotFoundError) throw err; // re-throw known errors as-is
+      throw new APIError('Could not fetch product', 500, err.message);
     }
+  }
 
-    async GetProductDescription(productId){
-        
-        const product = await this.repository.FindById(productId);
-        return FormateData(product)
+  async GetProductsByCategory(category) {
+    try {
+      const products = await this.repository.FindByCategory(category);
+      if (!products || products.length === 0) {
+        throw new NotFoundError(`No products found for category: ${category}`);
+      }
+      return FormateData(products);
+    } catch (err) {
+      if (err instanceof NotFoundError) throw err;
+      throw new APIError('Could not fetch products by category', 500, err.message);
     }
+  }
 
-    async GetProductsByCategory(category){
-
-        const products = await this.repository.FindByCategory(category);
-        return FormateData(products)
-
+  async GetSelectedProducts(selectedIds) {
+    try {
+      if (!Array.isArray(selectedIds) || selectedIds.length === 0) {
+        throw new BadRequestError('selectedIds must be a non-empty array');
+      }
+      const products = await this.repository.FindSelectedProducts(selectedIds);
+      return FormateData(products);
+    } catch (err) {
+      if (err instanceof BadRequestError) throw err;
+      throw new APIError('Could not fetch selected products', 500, err.message);
     }
+  }
 
-    async GetSelectedProducts(selectedIds){
-        
-        const products = await this.repository.FindSelectedProducts(selectedIds);
-        return FormateData(products);
+  async GetProductPayload(userId, { productId, qty }, event) {
+    try {
+      const product = await this.repository.FindById(productId);
+      if (!product) throw new NotFoundError(`Product with id ${productId} not found`);
+
+      const payload = {
+        event,
+        data: { userId, product, qty }
+      };
+
+      return FormateData(payload);
+    } catch (err) {
+      if (err instanceof NotFoundError) throw err;
+      throw new APIError('Could not build product payload', 500, err.message);
     }
-
-    async GetProductPayload(userId,{ productId, qty },event){
-
-         const product = await this.repository.FindById(productId);
-
-        if(product){
-             const payload = { 
-                event: event,
-                data: { userId, product, qty}
-            };
- 
-             return FormateData(payload)
-        }else{
-            return FormateData({error: 'No product Available'});
-        }
-
-    }
- 
-
+  }
 }
 
 export default ProductService;
