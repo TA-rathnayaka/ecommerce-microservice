@@ -6,7 +6,7 @@ const styleMap = {
 
 export function Toast({ toast, onDismiss }) {
   return (
-    <div className={`animate-floatIn rounded-2xl border-l-4 p-4 shadow-soft backdrop-blur ${styleMap[toast.type] || styleMap.info}`}>
+    <div className={`animate-floatIn rounded-2xl border-l-4 p-4 backdrop-blur ${styleMap[toast.type] || styleMap.info}`}>
       <div className="flex items-start justify-between gap-3">
         <p className="font-body text-sm text-ink">{toast.message}</p>
         <button

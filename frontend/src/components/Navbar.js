@@ -2,13 +2,6 @@ import { Link, NavLink, useNavigate } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
 import { useCart } from "../context/CartContext";
 
-const navLinkClass = ({ isActive }) =>
-  `relative text-sm font-bold transition ${
-    isActive ? "text-ink" : "text-ink/60 hover:text-ink"
-  } after:absolute after:-bottom-2 after:left-1/2 after:h-0.5 after:-translate-x-1/2 after:bg-ember after:transition-all ${
-    isActive ? "after:w-4" : "after:w-0"
-  }`;
-
 export function Navbar() {
   const { isAuthenticated, logout } = useAuth();
   const { itemCount } = useCart();
@@ -19,63 +12,113 @@ export function Navbar() {
     navigate("/");
   };
 
+  const navLinkClass = ({ isActive }) =>
+    `relative py-1 text-base font-medium transition-all hover:text-ink ${
+      isActive ? "text-ink font-bold" : "text-gray-400"
+    }`;
+
+  const ActiveUnderline = () => (
+    <div className="absolute -bottom-1 left-1/2 h-0.5 w-4 -translate-x-1/2 rounded-full bg-[#FF6B35]" />
+  );
+
   return (
-    <header className="bg-white py-4">
-      <nav className="mx-auto flex w-full max-w-6xl items-center justify-between px-4 md:px-6">
-        <Link to="/" className="flex items-center gap-2 font-display text-2xl font-black tracking-wider text-ember">
-          <span className="flex h-8 w-8 items-center justify-center rounded-full bg-ember/10 text-xl">
-            🌱
+    <header className="w-full bg-white">
+      <nav className="mx-auto flex h-20 w-full max-w-7xl items-center justify-between px-4 md:px-8">
+        {/* Logo */}
+        <Link to="/" className="flex items-center gap-1.5">
+          <div className="flex h-11 w-11 items-center justify-center">
+            <svg viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg">
+              <path d="M24 44C24 44 40 36 40 24C40 12 24 4 24 4C24 4 8 12 8 24C8 36 24 44 24 44Z" stroke="#2D5A34" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+              <path d="M24 44V24" stroke="#2D5A34" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+              <path d="M24 24C24 24 32 20 36 12" stroke="#2D5A34" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+              <path d="M24 24C24 24 16 20 12 12" stroke="#2D5A34" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+              <path d="M16 32C18 36 22 38 24 38C26 38 30 36 32 32" stroke="#FF6B35" strokeWidth="2" strokeLinecap="round"/>
+            </svg>
+          </div>
+          <span className="font-display text-3xl font-black tracking-tighter text-[#FF6B35]">
+            FRESH
           </span>
-          BAZAARFLOW
         </Link>
 
-        <div className="hidden items-center gap-8 md:flex">
+        {/* Navigation Links */}
+        <div className="hidden items-center gap-10 md:flex">
           <NavLink to="/" end className={navLinkClass}>
-            Home
+            {({ isActive }) => (
+              <>
+                Home
+                {isActive && <ActiveUnderline />}
+              </>
+            )}
           </NavLink>
           <NavLink to="/category/fruits" className={navLinkClass}>
-            Catalog
+            {({ isActive }) => (
+              <>
+                Catalog
+                {isActive && <ActiveUnderline />}
+              </>
+            )}
           </NavLink>
-          {isAuthenticated && (
-            <>
-              <NavLink to="/profile" className={navLinkClass}>
-                Profile
-              </NavLink>
-              <NavLink to="/orders" className={navLinkClass}>
-                Orders
-              </NavLink>
-              <NavLink to="/wishlist" className={navLinkClass}>
-                Wishlist
-              </NavLink>
-              <NavLink to="/create-product" className={navLinkClass}>
-                + Add Product
-              </NavLink>
-            </>
-          )}
+          <NavLink to="/shop" className={navLinkClass}>
+            {({ isActive }) => (
+              <>
+                Shop
+                {isActive && <ActiveUnderline />}
+              </>
+            )}
+          </NavLink>
+          <NavLink to="/contact" className={navLinkClass}>
+            {({ isActive }) => (
+              <>
+                Contact
+                {isActive && <ActiveUnderline />}
+              </>
+            )}
+          </NavLink>
         </div>
 
-        <div className="flex items-center gap-4">
-          <NavLink to="/cart" className="relative flex h-10 w-10 items-center justify-center rounded-full bg-yellow-400 text-white transition hover:bg-yellow-500">
-            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" className="h-5 w-5">
-              <path strokeLinecap="round" strokeLinejoin="round" d="M2.25 3h1.386c.51 0 .955.343 1.087.835l.383 1.437M7.5 14.25a3 3 0 00-3 3h15.75m-12.75-3h11.218c1.121-2.3 2.1-4.684 2.924-7.138a60.114 60.114 0 00-16.536-1.84M7.5 14.25L5.106 5.272M6 20.25a.75.75 0 11-1.5 0 .75.75 0 011.5 0zm12.75 0a.75.75 0 11-1.5 0 .75.75 0 011.5 0z" />
+        {/* Right Side: Search, Cart, Auth */}
+        <div className="flex items-center gap-3 md:gap-5">
+          {/* Search Bar */}
+          <div className="relative hidden lg:block">
+            <span className="absolute inset-y-0 left-3 flex items-center text-gray-400">
+              <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+              </svg>
+            </span>
+            <input 
+              type="text" 
+              placeholder="Search" 
+              className="h-10 w-48 rounded-full border border-gray-100 bg-gray-50 pl-10 pr-4 text-sm focus:border-[#FF6B35] focus:outline-none focus:ring-1 focus:ring-[#FF6B35]"
+            />
+          </div>
+
+          {/* Cart Icon */}
+          <NavLink 
+            to="/cart" 
+            className="relative flex h-11 w-11 items-center justify-center rounded-full bg-[#FFB703] text-white transition-all hover:scale-105 active:scale-95 shadow-sm"
+          >
+            <svg xmlns="http://www.w3.org/2000/svg" fill="currentColor" viewBox="0 0 24 24" className="h-5 w-5">
+              <path d="M7 18c-1.1 0-1.99.9-1.99 2S5.9 22 7 22s2-.9 2-2-.9-2-2-2zM1 2v2h2l3.6 7.59-1.35 2.45c-.16.28-.25.61-.25.96 0 1.1.9 2 2 2h12v-2H7.42c-.14 0-.25-.11-.25-.25l.03-.12.9-1.63h7.45c.75 0 1.41-.41 1.75-1.03l3.58-6.49c.08-.14.12-.31.12-.48 0-.55-.45-1-1-1H5.21l-.94-2H1zm16 16c-1.1 0-1.99.9-1.99 2s.89 2 1.99 2 2-.9 2-2-.9-2-2-2z" />
             </svg>
             {itemCount > 0 && (
-              <span className="absolute -right-1 -top-1 flex h-5 w-5 items-center justify-center rounded-full border-2 border-white bg-red-500 text-[10px] font-bold text-white">
+              <span className="absolute -right-1 -top-1 flex h-5 w-5 items-center justify-center rounded-full bg-red-500 text-[10px] font-bold text-white ring-2 ring-white">
                 {itemCount}
               </span>
             )}
           </NavLink>
+
+          {/* Auth Button */}
           {isAuthenticated ? (
             <button
               onClick={onLogout}
-              className="rounded-lg bg-moss px-6 py-2.5 text-sm font-bold text-white shadow-lg shadow-moss/30 transition hover:bg-moss/90"
+              className="rounded-xl bg-[#2D5A34] px-6 py-2.5 font-bold text-white transition-all hover:bg-[#234729] active:scale-95"
             >
-              Logout
+              Log Out
             </button>
           ) : (
             <Link
               to="/login"
-              className="rounded-lg bg-moss px-6 py-2.5 text-sm font-bold text-white shadow-lg shadow-moss/30 transition hover:bg-moss/90"
+              className="rounded-xl bg-[#2D5A34] px-7 py-2.5 font-bold text-white transition-all hover:bg-[#234729] hover:no-underline active:scale-95"
             >
               Sign Up
             </Link>

@@ -55,7 +55,7 @@ export function ProfilePage() {
       <h1 className="mb-6 font-display text-4xl font-bold text-ink">My Profile</h1>
 
       {/* Identity card */}
-      <div className="mb-4 rounded-3xl border border-ink/10 bg-white/75 p-6 shadow-soft">
+      <div className="mb-4 rounded-3xl border border-ink/10 bg-white/75 p-6">
         {/* Avatar + email */}
         <div className="mb-5 flex items-center gap-4">
           <div className="flex h-16 w-16 shrink-0 items-center justify-center rounded-full bg-aqua/10 font-display text-xl font-bold text-aqua">
@@ -98,7 +98,7 @@ export function ProfilePage() {
           { label: "Wishlist",    count: wishlistCount },
           { label: "Cart items",  count: cartCount },
         ].map(({ label, count }) => (
-          <div key={label} className="rounded-2xl border border-ink/10 bg-white/75 p-4 text-center shadow-soft">
+          <div key={label} className="rounded-2xl border border-ink/10 bg-white/75 p-4 text-center">
             <p className="font-display text-3xl font-bold text-ink">{count}</p>
             <p className="mt-1 text-xs font-semibold uppercase tracking-wide text-ink/50">{label}</p>
           </div>

@@ -28,7 +28,7 @@ export function AuthForm({ title, submitLabel, fields = [], onSubmit, footer }) 
   return (
     <form
       onSubmit={handleSubmit}
-      className="mx-auto w-full max-w-md animate-rise rounded-3xl bg-white p-8 shadow-xl shadow-moss/10"
+      className="mx-auto w-full max-w-md animate-rise rounded-3xl bg-white p-8"
     >
       <div className="mb-6 text-center">
         <span className="mb-3 inline-flex h-12 w-12 items-center justify-center rounded-full bg-moss/10 text-2xl">

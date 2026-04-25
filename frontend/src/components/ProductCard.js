@@ -30,7 +30,7 @@ export function ProductCard({ product }) {
   return (
     <Link
       to={`/product/${product._id}`}
-      className="group relative flex flex-col items-center overflow-hidden rounded-2xl bg-white p-4 shadow-sm transition-all hover:shadow-lg border border-ink/5"
+      className="group relative flex flex-col items-center overflow-hidden rounded-2xl bg-white p-4 transition-all border border-ink/5"
     >
       <button
         onClick={handleWishlistToggle}
