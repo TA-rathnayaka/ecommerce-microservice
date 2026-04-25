@@ -9,6 +9,7 @@ export function CategoryPage() {
   const { type } = useParams();
   const normalizedType = type?.toLowerCase();
   const [products, setProducts] = useState([]);
+  const [counts, setCounts] = useState(null);
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
@@ -24,6 +25,9 @@ export function CategoryPage() {
         
         if (mounted) {
           setProducts(Array.isArray(data) ? data : data?.products || []);
+          if (data?.categoryCounts) {
+            setCounts(data.categoryCounts);
+          }
         }
       } catch (error) {
         if (mounted) setProducts([]);
@@ -41,7 +45,7 @@ export function CategoryPage() {
       <h1 className="mb-5 font-display text-3xl font-bold capitalize text-ink md:text-4xl">
         {normalizedType ? `Category: ${normalizedType}` : "All Products"}
       </h1>
-      <CategoryFilter activeCategory={normalizedType} />
+      <CategoryFilter activeCategory={normalizedType} counts={counts} />
 
       {isLoading ? (
         <LoadingSpinner label="Loading category" />
