@@ -10,6 +10,7 @@ import { Footer } from "../components/Footer";
 export function HomePage() {
   const toast = useToast();
   const [products, setProducts] = useState([]);
+  const [counts, setCounts] = useState(null);
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
@@ -21,6 +22,9 @@ export function HomePage() {
         const data = await api.getProducts();
         if (mounted) {
           setProducts(Array.isArray(data) ? data : data?.products || []);
+          if (data?.categoryCounts) {
+            setCounts(data.categoryCounts);
+          }
         }
       } catch (error) {
         toast.error(error.message || "Failed to fetch products");
@@ -130,7 +134,7 @@ export function HomePage() {
           <h2 className="font-display text-4xl font-bold text-ink">Top Categories</h2>
         </div>
 
-        <CategoryFilter />
+        <CategoryFilter counts={counts} />
 
         {isLoading ? (
           <LoadingSpinner label="Loading products" />

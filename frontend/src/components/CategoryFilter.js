@@ -1,5 +1,7 @@
+import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { CATEGORIES } from "../config";
+import { api } from "../services/api";
 
 const IconContainer = ({ children }) => (
   <div className="mb-4 flex h-20 w-20 items-center justify-center rounded-full bg-white">
@@ -18,9 +20,9 @@ const categoryIcons = {
       <img src="/assets/vegetables.png" alt="Vegetables" className="h-16 w-16 object-contain" />
     </IconContainer>
   ),
-  electronics: (
+  oils: (
     <IconContainer>
-      <img src="/assets/electronics.png" alt="Electronics" className="h-16 w-16 object-contain" />
+      <img src="/assets/oils.png" alt="Oils" className="h-16 w-16 object-contain" />
     </IconContainer>
   ),
   default: (
@@ -36,16 +38,27 @@ const BrowseAllIcon = () => (
   </IconContainer>
 );
 
-export function CategoryFilter({ activeCategory }) {
+export function CategoryFilter({ activeCategory, counts: initialCounts }) {
   const navigate = useNavigate();
+  const [counts, setCounts] = useState(initialCounts || {});
 
-  const counts = {
-    all: "240 item",
-    vegetables: "140 item",
-    meat: "25 item",
-    fruits: "45 item",
-    electronics: "12 item"
-  };
+  useEffect(() => {
+    if (!initialCounts) {
+      const loadCounts = async () => {
+        try {
+          const data = await api.getProducts();
+          if (data?.categoryCounts) {
+            setCounts(data.categoryCounts);
+          }
+        } catch (error) {
+          console.error("Failed to load category counts:", error);
+        }
+      };
+      loadCounts();
+    } else {
+      setCounts(initialCounts);
+    }
+  }, [initialCounts]);
 
   return (
     <div className="mb-12 flex flex-wrap justify-center gap-6">
@@ -60,14 +73,14 @@ export function CategoryFilter({ activeCategory }) {
       >
         <BrowseAllIcon />
         <span className="font-display text-lg font-bold text-ink">Browse All</span>
-        <span className="mt-1 text-sm font-medium text-gray-400">({counts.all})</span>
+        <span className="mt-1 text-sm font-medium text-gray-400">({counts.all || 0} items)</span>
       </button>
 
       {CATEGORIES.map((category) => {
         const catLower = category.toLowerCase();
         const isActive = activeCategory?.toLowerCase() === catLower;
         const icon = categoryIcons[catLower] || categoryIcons.default;
-        const count = counts[catLower] || "0 item";
+        const count = counts[catLower] || 0;
         
         return (
           <button
@@ -81,7 +94,7 @@ export function CategoryFilter({ activeCategory }) {
           >
             {icon}
             <span className="font-display text-lg font-bold capitalize text-ink">{category}</span>
-            <span className="mt-1 text-sm font-medium text-gray-400">({count})</span>
+            <span className="mt-1 text-sm font-medium text-gray-400">({count} items)</span>
           </button>
         );
       })}

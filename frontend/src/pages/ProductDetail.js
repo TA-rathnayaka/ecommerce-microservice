@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useCallback } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { useAppDispatch, useAppSelector } from "../store/hooks";
 import toast from "../utils/toast";
@@ -69,41 +69,47 @@ const ProductDetails = () => {
   const { currentProduct } = useAppSelector((state) => state.shoppingReducer);
   const { wishlist, cart } = useAppSelector((state) => state.userReducer);
 
-  const [currentUnit, setCurrentUnit] = useState(0);
   const [imgError, setImgError] = useState(false);
-
-  const { _id, banner, price, name, desc, type, available } = currentProduct;
 
   useEffect(() => { dispatch(onGetProductDetails(id)); }, [id, dispatch]);
 
-  useEffect(() => {
-    if (Array.isArray(cart) && cart.length) {
-      const exist = cart.filter(({ product }) => product._id === _id);
-      if (exist.length) setCurrentUnit(exist[0].unit);
-      else setCurrentUnit(0);
-    }
-  }, [currentProduct, cart, _id]);
+  // Guard: product may be an empty object while loading
+  const isLoaded = Boolean(currentProduct?._id);
 
-  const inCart = Array.isArray(cart) && cart.some(({ product }) => product._id === _id);
+  const { _id, banner, price, name, desc, type, available } = currentProduct ?? {};
+
+  // Derive cart quantity directly from Redux state — no local mirror needed.
+  // This is the single source of truth and avoids setState/dispatch race conditions.
+  const cartEntry = Array.isArray(cart)
+    ? cart.find(({ product }) => product._id === _id)
+    : undefined;
+  const currentUnit = cartEntry?.unit ?? 0;
+
+  const inCart = currentUnit > 0;
   const inWishlist = Array.isArray(wishlist) && wishlist.some((item) => item._id === _id);
   const cat = categoryColors[type] || categoryColors.default;
 
-  const addCart = () => {
+  // addCart and removeCart dispatch with the new quantity synchronously;
+  // no intermediate local state is needed.
+  const addCart = useCallback(() => {
+    if (!available) return;
     const newUnit = currentUnit + 1;
-    setCurrentUnit(newUnit);
-    setTimeout(() => dispatch(onAddToCart({ _id, qty: newUnit })), 0);
+    dispatch(onAddToCart({ _id, qty: newUnit }));
     if (currentUnit === 0) toast.success(`${name} added to cart!`);
-  };
-  const removeCart = () => {
+  }, [dispatch, _id, currentUnit, name, available]);
+
+  const removeCart = useCallback(() => {
     if (currentUnit <= 0) return;
     const newUnit = currentUnit - 1;
-    setCurrentUnit(newUnit);
-    setTimeout(() => {
-      newUnit > 0 ? dispatch(onAddToCart({ _id, qty: newUnit })) : dispatch(onRemoveFromCart(_id));
-    }, 0);
-    if (newUnit === 0) toast.success(`${name} removed from cart.`);
-  };
-  const toggleWishlist = () => {
+    if (newUnit > 0) {
+      dispatch(onAddToCart({ _id, qty: newUnit }));
+    } else {
+      dispatch(onRemoveFromCart(_id));
+      toast.success(`${name} removed from cart.`);
+    }
+  }, [dispatch, _id, currentUnit, name]);
+
+  const toggleWishlist = useCallback(() => {
     if (inWishlist) {
       dispatch(onRemoveFromWishlist(_id));
       toast("Removed from wishlist", { icon: "💔" });
@@ -111,9 +117,9 @@ const ProductDetails = () => {
       dispatch(onAddToWishlist(_id));
       toast.success("Added to wishlist!");
     }
-  };
+  }, [dispatch, _id, inWishlist]);
 
-  if (!name) {
+  if (!isLoaded) {
     return (
       <div style={{ display: "flex", alignItems: "center", justifyContent: "center", height: "50vh" }}>
         <div className="skeleton" style={{ width: 60, height: 60, borderRadius: "50%" }} />
@@ -172,8 +178,12 @@ const ProductDetails = () => {
           {/* Description */}
           {desc && (
             <div style={{ marginBottom: 24 }}>
-              <p style={{ fontSize: "0.78rem", color: "var(--text-muted)", textTransform: "uppercase", letterSpacing: "0.07em", fontWeight: 600, margin: "0 0 8px" }}>Description</p>
-              <p style={{ color: "var(--text-secondary)", lineHeight: 1.7, fontSize: "0.9375rem", margin: 0 }}>{desc}</p>
+              <p style={{ fontSize: "0.78rem", color: "var(--text-muted)", textTransform: "uppercase", letterSpacing: "0.07em", fontWeight: 600, margin: "0 0 8px" }}>
+                Description
+              </p>
+              <p style={{ color: "var(--text-secondary)", lineHeight: 1.7, fontSize: "0.9375rem", margin: 0 }}>
+                {desc}
+              </p>
             </div>
           )}
 
@@ -185,12 +195,29 @@ const ProductDetails = () => {
 
           {/* Actions */}
           <div style={actionsRow}>
-            {/* Cart control */}
+            {/* Cart control — shows stepper when already in cart, add button otherwise */}
             {inCart ? (
               <div className="qty-ctrl" style={{ height: 50, borderRadius: 14 }}>
-                <button className="qty-btn" style={{ width: 50, height: 50 }} onClick={removeCart}><MinusIcon /></button>
-                <span className="qty-value" style={{ minWidth: 44, fontSize: "1.1rem" }}>{currentUnit}</span>
-                <button className="qty-btn" style={{ width: 50, height: 50 }} onClick={addCart}><PlusIcon /></button>
+                <button
+                  className="qty-btn"
+                  style={{ width: 50, height: 50 }}
+                  onClick={removeCart}
+                  aria-label="Decrease quantity"
+                >
+                  <MinusIcon />
+                </button>
+                <span className="qty-value" style={{ minWidth: 44, fontSize: "1.1rem" }}>
+                  {currentUnit}
+                </span>
+                <button
+                  className="qty-btn"
+                  style={{ width: 50, height: 50 }}
+                  onClick={addCart}
+                  disabled={!available}
+                  aria-label="Increase quantity"
+                >
+                  <PlusIcon />
+                </button>
               </div>
             ) : (
               <button
@@ -208,6 +235,7 @@ const ProductDetails = () => {
               style={wishBtnStyle(inWishlist)}
               onClick={toggleWishlist}
               title={inWishlist ? "Remove from Wishlist" : "Add to Wishlist"}
+              aria-label={inWishlist ? "Remove from Wishlist" : "Add to Wishlist"}
             >
               {inWishlist ? <HeartFilled /> : <HeartOutline />}
             </button>

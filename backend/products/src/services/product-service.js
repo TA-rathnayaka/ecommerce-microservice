@@ -24,7 +24,14 @@ class ProductService {
       const categories = Object.keys(
         products.reduce((acc, { type }) => ({ ...acc, [type]: true }), {})
       );
-      return FormateData({ products, categories });
+      
+      const categoryCounts = products.reduce((acc, { type }) => {
+        acc[type] = (acc[type] || 0) + 1;
+        return acc;
+      }, {});
+      categoryCounts.all = products.length;
+
+      return FormateData({ products, categories, categoryCounts });
     } catch (err) {
       throw new APIError('Could not fetch products', 500, err.message);
     }
