@@ -51,7 +51,7 @@ export function CategoryFilter({ activeCategory }) {
     <div className="mb-12 flex flex-wrap justify-center gap-6">
       {/* Browse All */}
       <button
-        onClick={() => navigate(`/`)}
+        onClick={() => navigate(`/shop`)}
         className={`group flex min-w-[190px] flex-col items-center justify-center rounded-xl border bg-white p-8 transition-all ${
           !activeCategory
             ? "border-[#2D5A34] shadow-xl ring-1 ring-[#2D5A34]/10"

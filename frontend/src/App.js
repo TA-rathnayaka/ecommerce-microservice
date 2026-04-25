@@ -14,6 +14,8 @@ import { CartPage } from "./pages/CartPage";
 import { WishlistPage } from "./pages/WishlistPage";
 import { CreateProductPage } from "./pages/CreateProductPage";
 
+import { Footer } from "./components/Footer";
+
 function App() {
   return (
     <BrowserRouter>
@@ -21,9 +23,10 @@ function App() {
         <WishlistProvider>
           <div className="flex min-h-screen flex-col bg-white font-body text-ink">
             <Navbar />
-            <main>
+            <main className="flex-1">
               <Routes>
                 <Route path="/" element={<HomePage />} />
+                <Route path="/shop" element={<CategoryPage />} />
                 <Route path="/category/:type" element={<CategoryPage />} />
                 <Route path="/product/:productId" element={<ProductDetailPage />} />
                 <Route path="/login" element={<LoginPage />} />

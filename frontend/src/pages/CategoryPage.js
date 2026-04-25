@@ -18,7 +18,10 @@ export function CategoryPage() {
 
     async function loadByCategory() {
       try {
-        const data = await api.getProductsByCategory(normalizedType);
+        const data = normalizedType 
+          ? await api.getProductsByCategory(normalizedType)
+          : await api.getProducts();
+        
         if (mounted) {
           setProducts(Array.isArray(data) ? data : data?.products || []);
         }
