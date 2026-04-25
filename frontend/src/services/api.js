@@ -44,7 +44,7 @@ export const api = {
   // fixed: was /products/${productId} but nginx routes / → products service directly
   // there is no /products prefix in the gateway
 
-  getProductsByCategory: (type) => request(`/category/${type}`),
+  getProductsByCategory: (type) => request(`/category/${type.toLowerCase()}`),
   // fixed: same — no /products prefix needed
 
   signup: (payload) =>
