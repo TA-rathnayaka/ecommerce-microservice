@@ -94,4 +94,29 @@ export const api = {
       headers: authHeaders(token),
       body: JSON.stringify({ txnNumber: txnId }),
     }),
+
+  getWishlist: (token) =>
+    request("/customer/wishlist", {
+      headers: authHeaders(token),
+    }),
+
+  addToWishlist: (token, productId) =>
+    request("/wishlist", {
+      method: "PUT",
+      headers: authHeaders(token),
+      body: JSON.stringify({ _id: productId }),
+    }),
+
+  removeFromWishlist: (token, productId) =>
+    request(`/wishlist/${productId}`, {
+      method: "DELETE",
+      headers: authHeaders(token),
+    }),
+
+  createProduct: (token, payload) =>
+    request("/product/create", {
+      method: "POST",
+      headers: authHeaders(token),
+      body: JSON.stringify(payload),
+    }),
 };
