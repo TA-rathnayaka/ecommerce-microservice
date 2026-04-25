@@ -36,6 +36,23 @@ export function HomePage() {
     };
   }, [toast]);
 
+  const [activeFaq, setActiveFaq] = useState(0);
+
+  const faqs = [
+    {
+      question: "How to chat with courier",
+      answer: "Now customers can send courier messages so you can make sure your order is correct and provide specific delivery instructions."
+    },
+    {
+      question: "How to track an order and make sure it's shipped",
+      answer: "You can track your order in real-time through the 'Orders' tab in your profile. We provide live GPS tracking once the courier is on the way."
+    },
+    {
+      question: "What is the return policy for fresh produce?",
+      answer: "We guarantee 100% freshness. If you're not satisfied with the quality of your grocery items, you can request a refund or replacement within 24 hours of delivery."
+    }
+  ];
+
   return (
     <section className="mx-auto w-full max-w-6xl px-4 py-8 md:px-6">
       {/* Hero Section */}
@@ -122,6 +139,102 @@ export function HomePage() {
           ))}
         </div>
       )}
+
+
+      {/* FAQ / Contact Section */}
+      <section id="contact" className="mt-24 mb-24 grid gap-12 lg:grid-cols-2 items-center px-4">
+        {/* Left: Image */}
+        <div className="relative flex justify-center">
+          <img 
+            src="/faq_image.png" 
+            alt="FAQ" 
+            className="w-full max-w-lg rounded-[2rem] object-cover"
+          />
+        </div>
+
+        {/* Right: FAQ Content */}
+        <div className="max-w-xl">
+          <span className="mb-4 block font-display text-sm font-bold uppercase tracking-widest text-moss">
+            FAQ
+          </span>
+          <h2 className="mb-12 font-display text-4xl font-bold leading-tight text-ink md:text-6xl">
+            Find the <span className="text-moss italic">answer</span> to <br />
+            your confusion
+          </h2>
+
+          <div className="space-y-4">
+            {faqs.map((faq, index) => {
+              const isOpen = activeFaq === index;
+              return (
+                <div 
+                  key={index} 
+                  className={`rounded-3xl transition-all duration-300 ${
+                    isOpen ? "border border-moss/20 bg-gray-50 p-6 md:p-8" : "bg-gray-50 p-6 md:p-8 hover:bg-gray-100"
+                  }`}
+                >
+                  <div 
+                    className="flex items-center justify-between cursor-pointer"
+                    onClick={() => setActiveFaq(isOpen ? null : index)}
+                  >
+                    <h3 className={`font-display font-bold text-ink ${isOpen ? "text-xl mb-4" : "text-lg"}`}>
+                      {faq.question}
+                    </h3>
+                    <svg 
+                      xmlns="http://www.w3.org/2000/svg" 
+                      className={`h-6 w-6 text-ink/40 transition-transform duration-300 ${isOpen ? "rotate-180" : ""}`} 
+                      fill="none" 
+                      viewBox="0 0 24 24" 
+                      stroke="currentColor"
+                    >
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                    </svg>
+                  </div>
+                  {isOpen && (
+                    <>
+                      <div className="h-px w-full bg-gray-200 mb-4" />
+                      <p className="animate-floatIn text-gray-500 leading-relaxed">
+                        {faq.answer}
+                      </p>
+                    </>
+                  )}
+                </div>
+              );
+            })}
+          </div>
+        </div>
+      </section>
+
+      {/* Summer Sale Banner */}
+      <section className="mt-20 mb-20 overflow-hidden rounded-[2.5rem] bg-[#3B5E41] flex flex-col md:flex-row items-center min-h-[380px]">
+        {/* Left Side: Image */}
+        <div className="relative h-full w-full md:w-1/2 flex items-center justify-center p-8 md:p-0">
+          <img 
+            src="/summer_sale.png" 
+            alt="Summer Sale" 
+            className="h-full w-full object-cover md:scale-110 md:-translate-x-8"
+          />
+        </div>
+
+        {/* Right Side: Content */}
+        <div className="w-full md:w-1/2 p-12 text-center md:text-left">
+          <span className="mb-4 block font-display text-lg font-bold tracking-widest text-white/90">
+            SUMMER SALE
+          </span>
+          <h2 className="mb-6 font-display text-6xl font-black md:text-8xl">
+            <span className="text-[#FFD60A]">35%</span> <span className="text-white">OFF</span>
+          </h2>
+          <p className="mb-10 max-w-sm font-body text-lg text-white/80 leading-relaxed mx-auto md:mx-0">
+            Free on all your order, free shipping and <br className="hidden md:block" />
+            30 days money-back guarantee
+          </p>
+          <Link 
+            to="/category/vegetables" 
+            className="inline-block rounded-2xl bg-[#FF6B35] px-12 py-4 font-display text-xl font-bold text-white transition-all hover:scale-105 active:scale-95"
+          >
+            Shop Now
+          </Link>
+        </div>
+      </section>
     </section>
   );
 }

@@ -4,7 +4,7 @@ export function CartItemRow({ item, onIncrease, onDecrease, onRemove }) {
   const subtotal = (Number(product.price ?? 0) * quantity).toFixed(2);
 
   return (
-    <div className="flex flex-col gap-3 rounded-2xl border border-ink/10 bg-white/80 p-4 backdrop-blur sm:flex-row sm:items-center sm:gap-4">
+    <div className="flex flex-col gap-3 rounded-2xl border border-moss/10 bg-white/80 p-4 backdrop-blur sm:flex-row sm:items-center sm:gap-4">
       
       {/* Product info */}
       <div className="flex-1 min-w-0">

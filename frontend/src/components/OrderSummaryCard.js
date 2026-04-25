@@ -1,6 +1,6 @@
 export function OrderSummaryCard({ order }) {
   return (
-    <article className="rounded-2xl border border-ink/10 bg-white/75 p-5">
+    <article className="rounded-2xl border border-moss/10 bg-white/75 p-5">
       <div className="mb-3 flex items-center justify-between">
         <span className="text-sm font-semibold text-ink/50">
           {new Date(order.date).toLocaleDateString("en-US", {

@@ -66,14 +66,12 @@ export function Navbar() {
               </>
             )}
           </NavLink>
-          <NavLink to="/contact" className={navLinkClass}>
-            {({ isActive }) => (
-              <>
-                Contact
-                {isActive && <ActiveUnderline />}
-              </>
-            )}
-          </NavLink>
+          <a 
+            href="/#contact" 
+            className="relative py-1 text-base font-medium transition-all hover:text-ink text-gray-400 hover:no-underline"
+          >
+            Contact
+          </a>
         </div>
 
         {/* Right Side: Search, Cart, Auth */}

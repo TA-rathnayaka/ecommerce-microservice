@@ -39,37 +39,49 @@ const BrowseAllIcon = () => (
 export function CategoryFilter({ activeCategory }) {
   const navigate = useNavigate();
 
+  const counts = {
+    all: "240 item",
+    vegetables: "140 item",
+    meat: "25 item",
+    fruits: "45 item",
+    electronics: "12 item"
+  };
+
   return (
-    <div className="mb-12 flex flex-wrap justify-center gap-8">
+    <div className="mb-12 flex flex-wrap justify-center gap-6">
+      {/* Browse All */}
       <button
         onClick={() => navigate(`/`)}
-        className={`group flex min-w-[180px] flex-col items-center justify-center rounded-3xl border bg-white p-8 ${
+        className={`group flex min-w-[190px] flex-col items-center justify-center rounded-xl border bg-white p-8 transition-all ${
           !activeCategory
-            ? "border-moss ring-2 ring-moss/20"
-            : "border-gray-100"
+            ? "border-[#2D5A34] shadow-xl ring-1 ring-[#2D5A34]/10"
+            : "border-slate-100"
         }`}
       >
         <BrowseAllIcon />
         <span className="font-display text-lg font-bold text-ink">Browse All</span>
+        <span className="mt-1 text-sm font-medium text-gray-400">({counts.all})</span>
       </button>
 
       {CATEGORIES.map((category) => {
         const catLower = category.toLowerCase();
         const isActive = activeCategory?.toLowerCase() === catLower;
         const icon = categoryIcons[catLower] || categoryIcons.default;
+        const count = counts[catLower] || "0 item";
         
         return (
           <button
             key={category}
             onClick={() => navigate(`/category/${catLower}`)}
-            className={`group flex min-w-[180px] flex-col items-center justify-center rounded-3xl border bg-white p-8 ${
+            className={`group flex min-w-[190px] flex-col items-center justify-center rounded-xl border bg-white p-8 transition-all ${
               isActive
-                ? "border-moss ring-2 ring-moss/20"
-                : "border-gray-100"
+                ? "border-[#2D5A34] shadow-xl ring-1 ring-[#2D5A34]/10"
+                : "border-slate-100"
             }`}
           >
             {icon}
             <span className="font-display text-lg font-bold capitalize text-ink">{category}</span>
+            <span className="mt-1 text-sm font-medium text-gray-400">({count})</span>
           </button>
         );
       })}
