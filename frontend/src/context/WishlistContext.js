@@ -1,4 +1,4 @@
-import { createContext, useCallback, useContext, useEffect, useState } from "react";
+import { createContext, useCallback, useContext, useEffect, useMemo, useState } from "react";
 import { api } from "../services/api";
 import { useAuth } from "./AuthContext";
 import { useToast } from "./ToastContext";
@@ -8,20 +8,25 @@ const WishlistContext = createContext(null);
 export function WishlistProvider({ children }) {
   const { token, isAuthenticated } = useAuth();
   const toast = useToast();
+
   const [wishlistItems, setWishlistItems] = useState([]);
+  const [isWishlistLoading, setIsWishlistLoading] = useState(false);
 
   const refreshWishlist = useCallback(async () => {
     if (!token) {
       setWishlistItems([]);
       return;
     }
+    setIsWishlistLoading(true);
     try {
       const data = await api.getWishlist(token);
       setWishlistItems(Array.isArray(data) ? data : []);
     } catch (error) {
-      console.error("Failed to load wishlist:", error);
+      toast.error(error.message || "Failed to load wishlist");
+    } finally {
+      setIsWishlistLoading(false);
     }
-  }, [token]);
+  }, [token, toast]);
 
   useEffect(() => {
     if (isAuthenticated) {
@@ -33,7 +38,10 @@ export function WishlistProvider({ children }) {
 
   const toggleWishlist = useCallback(
     async (productId) => {
-      if (!token) throw new Error("Please log in to manage wishlist");
+      if (!token) {
+        toast.error("Please log in to manage wishlist");
+        return;
+      }
       try {
         await api.addToWishlist(token, productId);
         await refreshWishlist();
@@ -52,8 +60,17 @@ export function WishlistProvider({ children }) {
     [wishlistItems]
   );
 
+  const value = useMemo(() => ({
+    wishlistItems,
+    isWishlistLoading,
+    refreshWishlist,
+    toggleWishlist,
+    isInWishlist,
+    wishlistCount: wishlistItems.length
+  }), [wishlistItems, isWishlistLoading, refreshWishlist, toggleWishlist, isInWishlist]);
+
   return (
-    <WishlistContext.Provider value={{ wishlistItems, refreshWishlist, toggleWishlist, isInWishlist }}>
+    <WishlistContext.Provider value={value}>
       {children}
     </WishlistContext.Provider>
   );
@@ -66,3 +83,4 @@ export function useWishlist() {
   }
   return context;
 }
+
