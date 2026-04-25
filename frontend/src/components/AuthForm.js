@@ -18,6 +18,8 @@ export function AuthForm({ title, submitLabel, fields = [], onSubmit, footer }) 
     setIsSubmitting(true);
     try {
       await onSubmit(formValues);
+    } catch {
+ 
     } finally {
       setIsSubmitting(false);
     }

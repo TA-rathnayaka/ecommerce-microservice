@@ -1,3 +1,4 @@
+// pages/LoginPage.jsx
 import { Link, Navigate, useLocation, useNavigate } from "react-router-dom";
 import { AuthForm } from "../components/AuthForm";
 import { useAuth } from "../context/AuthContext";
@@ -18,15 +19,19 @@ export function LoginPage() {
   const handleLogin = async ({ email, password }) => {
     try {
       const data = await api.login({ email, password });
+
+      // fixed: backend returns { id, token } after FormateData unwrap in api.js
+      // previously checked data?.token but data was still wrapped as { data: { token } }
       if (!data?.token) {
-        throw new Error("Token missing from login response");
+        throw new Error("Login failed. Please try again.");
       }
+
       login(data.token);
       toast.success("Logged in successfully");
       navigate(fromPath, { replace: true });
     } catch (error) {
       toast.error(error.message || "Login failed");
-      throw error;
+      throw error; // re-throw so AuthForm can handle loading/error state
     }
   };
 
@@ -42,7 +47,10 @@ export function LoginPage() {
         onSubmit={handleLogin}
         footer={
           <p>
-            No account yet? <Link className="font-semibold text-aqua" to="/register">Register</Link>
+            No account yet?{" "}
+            <Link className="font-semibold text-aqua" to="/register">
+              Register
+            </Link>
           </p>
         }
       />

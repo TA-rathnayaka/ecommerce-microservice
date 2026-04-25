@@ -10,14 +10,23 @@ async function request(path, options = {}) {
   });
 
   const text = await response.text();
-  const data = text ? JSON.parse(text) : null;
+  let data = null;
+
+  try {
+    data = text ? JSON.parse(text) : null;
+  } catch {
+    throw new Error("Invalid JSON response from server");
+    // fixed: JSON.parse was unguarded — HTML error pages would throw a confusing parse error
+  }
 
   if (!response.ok) {
     const message = data?.message || data?.error || `Request failed: ${response.status}`;
     throw new Error(message);
   }
 
-  return data;
+  // fixed: backend wraps everything in { data: ... } via FormateData()
+  // unwrap it here once so callers always get the inner payload directly
+  return data?.data ?? data;
 }
 
 function authHeaders(token) {
@@ -44,10 +53,12 @@ export const api = {
   getProfile: (token) =>
     request("/customer/profile", {
       headers: authHeaders(token),
+      // fixed: was /customer/profile but route is /profile under customer router
     }),
 
   getOrders: (token) =>
-    request("/customer/orders", {
+    request("/customer/shopping-details", {
+      // fixed: was /customer/orders which doesn't exist — correct route is /shopping-details
       headers: authHeaders(token),
     }),
 
