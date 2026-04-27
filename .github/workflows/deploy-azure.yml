@@ -2,7 +2,7 @@ name: Build and Deploy to Azure AKS
 
 on:
   push:
-    branches: ["main"]
+    branches: ["main", "sonna-issues"]
   workflow_dispatch:
     inputs:
       deploy_mode:
