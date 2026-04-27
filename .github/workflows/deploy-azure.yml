@@ -64,9 +64,14 @@ jobs:
       - name: Log in to ACR
         run: az acr login --name ${{ env.ACR_NAME }}
 
+      - name: Set Short SHA
+        id: vars
+        run: echo "sha_short=$(git rev-parse --short HEAD)" >> $GITHUB_OUTPUT
+
       - name: Build and push ${{ matrix.service }}
         run: |
-          IMAGE_TAG="${{ env.ACR_NAME }}.azurecr.io/${{ matrix.image }}:${GITHUB_SHA::7}"
+          TAG="${{ steps.vars.outputs.sha_short }}"
+          IMAGE_TAG="${{ env.ACR_NAME }}.azurecr.io/${{ matrix.image }}:$TAG"
           IMAGE_LATEST="${{ env.ACR_NAME }}.azurecr.io/${{ matrix.image }}:latest"
 
           docker build \
@@ -163,10 +168,14 @@ jobs:
           CLUSTER="${{ needs.terraform.outputs.aks_cluster || 'aks-ecommerce' }}"
           az aks get-credentials --resource-group "$RG" --name "$CLUSTER" --overwrite-existing
 
+      - name: Set Short SHA
+        id: vars
+        run: echo "sha_short=$(git rev-parse --short HEAD)" >> $GITHUB_OUTPUT
+
       - name: Patch Image Tags
         run: |
           ACR_SERVER="${{ needs.terraform.outputs.acr_server || secrets.ACR_LOGIN_SERVER }}"
-          TAG="${GITHUB_SHA::7}"
+          TAG="${{ steps.vars.outputs.sha_short }}"
           find k8s -name "*.yaml" | xargs sed -i "s|image: ecommerce/|image: $ACR_SERVER/ecommerce/|g"
           # Only use hash tag if we built images in this run
           if [[ "${{ github.event.inputs.deploy_mode }}" != "--app-only" ]]; then
