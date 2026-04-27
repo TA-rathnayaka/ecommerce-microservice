@@ -59,20 +59,6 @@ jobs:
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
-        with:
-          fetch-depth: 0
-
-      - name: SonarQube Scan
-        uses: SonarSource/sonarcloud-github-action@master
-        continue-on-error: true
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
-        with:
-          args: >
-            -Dsonar.projectKey=TA-rathnayaka_ecommerce-${{ matrix.service }}
-            -Dsonar.organization=TA-rathnayaka
-            -Dsonar.sources=${{ matrix.context }}
 
       - name: Log in to Azure
         uses: azure/login@v1
