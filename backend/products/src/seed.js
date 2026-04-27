@@ -21,8 +21,9 @@ const ProductModel = mongoose.model('product', ProductSchema);
 
 const seedData = JSON.parse(fs.readFileSync(path.join(__dirname, 'sampledata.json'), 'utf8'));
 
-// Use localhost for local execution
-const DB_URL = 'mongodb://localhost:27018/msytt_product';
+// Use MONGODB_URI from env or default to nosql-db for execution inside docker
+const DB_URL = process.env.MONGODB_URI || 'mongodb://nosql-db/msytt_product';
+console.log('Connecting to:', DB_URL);
 
 async function seed() {
     try {
