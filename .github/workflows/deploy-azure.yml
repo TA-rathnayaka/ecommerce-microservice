@@ -27,7 +27,33 @@ permissions:
 
 jobs:
   # ──────────────────────────────────────────────────────────────────────────
-  # Step 1 & 2: Build and push all container images
+  # Step 1: Code Quality (Independent Job)
+  # ──────────────────────────────────────────────────────────────────────────
+  sonarqube:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        service: [customer, products, shopping, proxy, frontend]
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      
+      - name: SonarQube Scan
+        uses: SonarSource/sonarcloud-github-action@master
+        continue-on-error: true
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+        with:
+          args: >
+            -Dsonar.projectKey=TA-rathnayaka_ecommerce-${{ matrix.service }}
+            -Dsonar.organization=TA-rathnayaka
+            -Dsonar.sources=${{ matrix.service == 'frontend' && './frontend' || format('./backend/{0}', matrix.service) }}
+
+  # ──────────────────────────────────────────────────────────────────────────
+  # Step 2: Build and push all container images
   # ──────────────────────────────────────────────────────────────────────────
   build:
     runs-on: ubuntu-latest
