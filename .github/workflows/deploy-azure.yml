@@ -12,7 +12,8 @@ on:
 
 env:
   AZURE_RESOURCE_GROUP: rg-ecommerce
-  ACR_NAME: ${{ secrets.ACR_NAME }}
+  # Try secret first, fall back to variable
+  ACR_NAME: ${{ secrets.ACR_NAME || vars.ACR_NAME }}
   TF_VERSION: "1.7.0"
   # Force GitHub to use Node.js 24 to silence deprecation warnings
   FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
