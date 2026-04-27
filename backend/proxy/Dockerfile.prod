@@ -1,0 +1,17 @@
+FROM nginx:alpine
+
+# Install envsubst (part of gettext)
+RUN apk add --no-cache gettext
+
+# Copy template config
+COPY nginx.prod.conf /etc/nginx/nginx.conf.template
+
+# Default values for local dev
+ENV PRODUCTS_HOST=products
+ENV SHOPPING_HOST=shopping
+ENV CUSTOMER_HOST=customer
+
+EXPOSE 8000
+
+# Substitute env vars at runtime and start nginx
+CMD ["/bin/sh", "-c", "envsubst '${PRODUCTS_HOST} ${SHOPPING_HOST} ${CUSTOMER_HOST}' < /etc/nginx/nginx.conf.template > /etc/nginx/nginx.conf && nginx -g 'daemon off;'"]

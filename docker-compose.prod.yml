@@ -1,0 +1,118 @@
+# ============================================================================
+# Docker Compose - Production (Azure-like local simulation)
+# ============================================================================
+# Usage: docker compose -f docker-compose.prod.yml up --build
+# ============================================================================
+
+services:
+  nosql-db:
+    image: mongo:6
+    ports:
+      - "27018:27017"
+    container_name: nosql-db
+    volumes:
+      - mongo-data:/data/db
+    restart: always
+
+  rabbitmq:
+    image: rabbitmq:3.12-alpine
+    container_name: rabbitmq
+    ports:
+      - '5672:5672'
+    restart: always
+    healthcheck:
+      test: rabbitmq-diagnostics -q ping
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  products:
+    build:
+      dockerfile: Dockerfile
+      context: ./backend/products
+    container_name: products
+    ports:
+      - "8002:8002"
+    restart: always
+    depends_on:
+      nosql-db:
+        condition: service_started
+      rabbitmq:
+        condition: service_healthy
+    environment:
+      - APP_SECRET=ecommerce_microservice_secret_key_2024
+      - MONGODB_URI=mongodb://nosql-db/msytt_product
+      - MSG_QUEUE_URL=amqp://rabbitmq:5672
+      - EXCHANGE_NAME=ONLINE_STORE
+      - PORT=8002
+      - NODE_ENV=prod
+
+  shopping:
+    build:
+      dockerfile: Dockerfile
+      context: ./backend/shopping
+    container_name: shopping
+    ports:
+      - "8003:8003"
+    restart: always
+    depends_on:
+      nosql-db:
+        condition: service_started
+      rabbitmq:
+        condition: service_healthy
+    environment:
+      - APP_SECRET=ecommerce_microservice_secret_key_2024
+      - MONGODB_URI=mongodb://nosql-db/msytt_shopping
+      - MSG_QUEUE_URL=amqp://rabbitmq:5672
+      - EXCHANGE_NAME=ONLINE_STORE
+      - PORT=8003
+      - NODE_ENV=prod
+
+  customer:
+    build:
+      dockerfile: Dockerfile
+      context: ./backend/customer
+    container_name: customer
+    ports:
+      - "8001:8001"
+    restart: always
+    depends_on:
+      nosql-db:
+        condition: service_started
+      rabbitmq:
+        condition: service_healthy
+    environment:
+      - APP_SECRET=ecommerce_microservice_secret_key_2024
+      - MONGODB_URI=mongodb://nosql-db/msytt_customer
+      - MSG_QUEUE_URL=amqp://rabbitmq:5672
+      - EXCHANGE_NAME=ONLINE_STORE
+      - PORT=8001
+      - NODE_ENV=prod
+
+  nginx-proxy:
+    build:
+      dockerfile: Dockerfile
+      context: ./backend/proxy
+    depends_on:
+      - products
+      - shopping
+      - customer
+    ports:
+      - 8000:8000
+    restart: always
+
+  frontend:
+    build:
+      dockerfile: Dockerfile
+      context: ./frontend
+      args:
+        REACT_APP_API_BASE_URL: http://localhost:8000
+    container_name: frontend
+    ports:
+      - "3000:80"
+    restart: always
+    depends_on:
+      - nginx-proxy
+
+volumes:
+  mongo-data:
