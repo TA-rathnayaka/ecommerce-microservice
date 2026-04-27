@@ -17,7 +17,7 @@ spec:
         - name: acr-secret
       containers:
         - name: shopping
-          image: tharanga123acr.azurecr.io/tharanga123acr.azurecr.io/tharanga123acr.azurecr.io/tharanga123acr.azurecr.io/tharanga123acr.azurecr.io/ecommerce/shopping:latest
+          image: tharanga123acr.azurecr.io/tharanga123acr.azurecr.io/tharanga123acr.azurecr.io/tharanga123acr.azurecr.io/tharanga123acr.azurecr.io/ecommerce/shopping:d05619e
           imagePullPolicy: IfNotPresent
           ports:
             - containerPort: 8003

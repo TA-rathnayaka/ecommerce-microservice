@@ -2,11 +2,7 @@
 # ============================================================================
 # Full deployment: Terraform (AKS infra) + Docker (build/push) + kubectl (app)
 # ============================================================================
-# Prerequisites: az cli, terraform, docker, kubectl
-# Usage:
-#   chmod +x setup.sh && ./setup.sh          # Full deploy
-#   ./setup.sh --app-only                    # Re-deploy K8s manifests only
-#   ./setup.sh --images-only                 # Rebuild & push images only
+# Mode: --app-only | --images-only | full
 # ============================================================================
 
 set -e
@@ -17,7 +13,6 @@ MODE="${1:-full}"
 cd "$(cd "$SCRIPT_DIR/.." && pwd)"
 ROOT_DIR="$(pwd)"
 
-# FIX 3: Use git commit hash as image tag to avoid corrupted latest manifest
 IMAGE_TAG=$(git rev-parse --short HEAD 2>/dev/null || echo "latest")
 
 echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
@@ -34,14 +29,6 @@ az account show > /dev/null 2>&1 || az login
 if [[ "$MODE" == "full" ]]; then
   echo ""
   echo "☁️  Step 1: Provisioning infrastructure with Terraform..."
-
-  if [ ! -f "$TF_DIR/terraform.tfvars" ]; then
-    echo "❌ ERROR: $TF_DIR/terraform.tfvars not found."
-    echo "   Copy the example: cp azure/terraform.tfvars.example azure/terraform.tfvars"
-    echo "   Then fill in your values and re-run."
-    exit 1
-  fi
-
   cd "$TF_DIR"
   terraform init -upgrade
   terraform apply -auto-approve -var-file="terraform.tfvars"
@@ -61,14 +48,11 @@ cd "$ROOT_DIR"
 echo "  ACR: $ACR_LOGIN_SERVER"
 echo "  AKS: $AKS_CLUSTER"
 
-# ─── FIX 2: Attach ACR to AKS so auth never breaks ──────────────────────────
+# ─── Attach ACR to AKS ──────────────────────────────────────────────────────
 if [[ "$MODE" == "full" ]]; then
   echo ""
   echo "🔗 Attaching ACR to AKS..."
-  az aks update \
-    --name "$AKS_CLUSTER" \
-    --resource-group "$RESOURCE_GROUP" \
-    --attach-acr "$ACR_NAME"
+  az aks update --name "$AKS_CLUSTER" --resource-group "$RESOURCE_GROUP" --attach-acr "$ACR_NAME" >/dev/null
   echo "  ✅ ACR attached"
 fi
 
@@ -76,112 +60,112 @@ fi
 if [[ "$MODE" == "full" || "$MODE" == "--images-only" ]]; then
   echo ""
   echo "🔨 Step 2: Building and pushing Docker images..."
-  az acr login --name "$ACR_NAME"
-
-  echo "  → customer"
-  docker build --platform linux/amd64 -t "${ACR_LOGIN_SERVER}/ecommerce/customer:${IMAGE_TAG}" ./backend/customer
-  docker push "${ACR_LOGIN_SERVER}/ecommerce/customer:${IMAGE_TAG}"
-
-  echo "  → products"
-  docker build --platform linux/amd64 -t "${ACR_LOGIN_SERVER}/ecommerce/products:${IMAGE_TAG}" ./backend/products
-  docker push "${ACR_LOGIN_SERVER}/ecommerce/products:${IMAGE_TAG}"
-
-  echo "  → shopping"
-  docker build --platform linux/amd64 -t "${ACR_LOGIN_SERVER}/ecommerce/shopping:${IMAGE_TAG}" ./backend/shopping
-  docker push "${ACR_LOGIN_SERVER}/ecommerce/shopping:${IMAGE_TAG}"
-
+  az acr login --name "$ACR_NAME" >/dev/null
+  
+  for service in customer products shopping; do
+    echo "  → $service"
+    docker build --platform linux/amd64 -t "${ACR_LOGIN_SERVER}/ecommerce/${service}:${IMAGE_TAG}" "./backend/${service}" >/dev/null
+    docker push "${ACR_LOGIN_SERVER}/ecommerce/${service}:${IMAGE_TAG}" >/dev/null
+  done
+  
   echo "  → proxy"
-  docker build --platform linux/amd64 -f ./backend/proxy/Dockerfile.prod \
-    -t "${ACR_LOGIN_SERVER}/ecommerce/proxy:${IMAGE_TAG}" ./backend/proxy
-  docker push "${ACR_LOGIN_SERVER}/ecommerce/proxy:${IMAGE_TAG}"
-
-  echo "  → frontend (no build-arg needed — uses runtime config)"
-  docker build --platform linux/amd64 \
-    -t "${ACR_LOGIN_SERVER}/ecommerce/frontend:${IMAGE_TAG}" ./frontend
-  docker push "${ACR_LOGIN_SERVER}/ecommerce/frontend:${IMAGE_TAG}"
-
+  docker build --platform linux/amd64 -f ./backend/proxy/Dockerfile.prod -t "${ACR_LOGIN_SERVER}/ecommerce/proxy:${IMAGE_TAG}" ./backend/proxy >/dev/null
+  docker push "${ACR_LOGIN_SERVER}/ecommerce/proxy:${IMAGE_TAG}" >/dev/null
+  
+  echo "  → frontend"
+  docker build --platform linux/amd64 -t "${ACR_LOGIN_SERVER}/ecommerce/frontend:${IMAGE_TAG}" ./frontend >/dev/null
+  docker push "${ACR_LOGIN_SERVER}/ecommerce/frontend:${IMAGE_TAG}" >/dev/null
+  
   echo "  ✅ Images pushed"
 fi
 
 # ─── Step 3: Update K8s manifests with real ACR name ────────────────────────
 echo ""
 echo "📝 Step 3: Patching image names in K8s manifests..."
-# FIX 1: Match only image lines to prevent double-prefixing on re-runs
-find "$K8S_DIR" -name "*.yaml" | xargs sed -i '' "s|image: ecommerce/|image: $ACR_LOGIN_SERVER/ecommerce/|g"
-# Also patch image tags to use current IMAGE_TAG
-find "$K8S_DIR" -name "*.yaml" | xargs sed -i '' "s|/ecommerce/\(.*\):latest|/ecommerce/\1:${IMAGE_TAG}|g"
+# Fix image prefixes
+find "$K8S_DIR" -name "*.yaml" | xargs sed -i '' "s|image: ecommerce/|image: $ACR_LOGIN_SERVER/ecommerce/|g" 2>/dev/null || true
+
+# Only patch tags if we actually pushed new ones in this run
+if [[ "$MODE" == "full" || "$MODE" == "--images-only" ]]; then
+  find "$K8S_DIR" -name "*.yaml" | xargs sed -i '' "s|/ecommerce/\(.*\):latest|/ecommerce/\1:${IMAGE_TAG}|g" 2>/dev/null || true
+  find "$K8S_DIR" -name "*.yaml" | xargs sed -i '' "s|/ecommerce/\(.*\):v[0-9]*|/ecommerce/\1:${IMAGE_TAG}|g" 2>/dev/null || true
+fi
 echo "  ✅ Image names updated"
 
 # ─── Step 4: Configure kubectl ──────────────────────────────────────────────
 echo ""
 echo "⚙️  Step 4: Configuring kubectl..."
-az aks get-credentials \
-  --resource-group "$RESOURCE_GROUP" \
-  --name "$AKS_CLUSTER" \
-  --overwrite-existing
+az aks get-credentials --resource-group "$RESOURCE_GROUP" --name "$AKS_CLUSTER" --overwrite-existing >/dev/null
 echo "  ✅ kubectl configured"
 
 # ─── Step 5: Deploy to Kubernetes ───────────────────────────────────────────
 if [[ "$MODE" == "full" || "$MODE" == "--app-only" ]]; then
   echo ""
   echo "🚢 Step 5: Deploying to Kubernetes..."
+  kubectl apply -f "$K8S_DIR/namespace.yaml" >/dev/null
+  kubectl apply -f "$K8S_DIR/infrastructure/storage-class.yaml" >/dev/null
+  kubectl apply -f "$K8S_DIR/infrastructure/mongodb/" >/dev/null
+  kubectl apply -f "$K8S_DIR/infrastructure/rabbitmq/" >/dev/null
 
-  # Namespace first
-  kubectl apply -f "$K8S_DIR/namespace.yaml"
+  echo "  ⏳ Waiting for Databases..."
+  kubectl rollout status deployment/products-db -n ecommerce --timeout=120s >/dev/null
+  kubectl rollout status deployment/customer-db -n ecommerce --timeout=120s >/dev/null
+  kubectl rollout status deployment/shopping-db -n ecommerce --timeout=120s >/dev/null
+  kubectl rollout status deployment/rabbitmq    -n ecommerce --timeout=120s >/dev/null
 
-  # StorageClass for Azure Disks
-  kubectl apply -f "$K8S_DIR/infrastructure/storage-class.yaml"
+  echo "  🚀 Deploying Microservices..."
+  kubectl apply -f "$K8S_DIR/services/customer/" >/dev/null
+  kubectl apply -f "$K8S_DIR/services/products/" >/dev/null
+  kubectl apply -f "$K8S_DIR/services/shopping/" >/dev/null
+  kubectl apply -f "$K8S_DIR/gateway/proxy.yaml" >/dev/null
+  kubectl apply -f "$K8S_DIR/gateway/frontend.yaml" >/dev/null
 
-  # Secrets & infrastructure
-  kubectl apply -f "$K8S_DIR/infrastructure/mongodb/"
-  kubectl apply -f "$K8S_DIR/infrastructure/rabbitmq/"
-
-  # Wait for infrastructure to be ready
-  echo "  ⏳ Waiting for MongoDB and RabbitMQ to be ready..."
-  kubectl rollout status deployment/products-db -n ecommerce --timeout=120s
-  kubectl rollout status deployment/customer-db -n ecommerce --timeout=120s
-  kubectl rollout status deployment/shopping-db -n ecommerce --timeout=120s
-  kubectl rollout status deployment/rabbitmq    -n ecommerce --timeout=120s
-
-  # Microservices
-  kubectl apply -f "$K8S_DIR/services/customer/"
-  kubectl apply -f "$K8S_DIR/services/products/"
-  kubectl apply -f "$K8S_DIR/services/shopping/"
-
-  # Gateway & frontend
-  kubectl apply -f "$K8S_DIR/gateway/"
-
-  echo "  ✅ All manifests applied"
-
-  # ─── Step 6: Get external IPs ─────────────────────────────────────────────
+  # ─── Step 6: Ingress & HTTPS ──────────────────────────────────────────────
   echo ""
-  echo "⏳ Step 6: Waiting for external IPs (may take 2-3 minutes)..."
-  kubectl wait --for=jsonpath='{.status.loadBalancer.ingress}' \
-    service/proxy -n ecommerce --timeout=180s 2>/dev/null || true
-  kubectl wait --for=jsonpath='{.status.loadBalancer.ingress}' \
-    service/frontend -n ecommerce --timeout=180s 2>/dev/null || true
+  echo "🌐 Step 6: Setting up Ingress & HTTPS (Let's Encrypt)..."
+  
+  echo "  Installing NGINX Ingress Controller..."
+  kubectl apply -f https://raw.githubusercontent.com/kubernetes/ingress-nginx/main/deploy/static/provider/cloud/deploy.yaml >/dev/null
+  
+  echo "  ⏳ Waiting for Ingress IP (this takes 2-3 mins)..."
+  INGRESS_IP=""
+  while [ -z "$INGRESS_IP" ] || [ "$INGRESS_IP" == "pending" ]; do
+    INGRESS_IP=$(kubectl get svc -n ingress-nginx ingress-nginx-controller -o jsonpath='{.status.loadBalancer.ingress[0].ip}' 2>/dev/null || echo "pending")
+    [ "$INGRESS_IP" == "pending" ] && sleep 10
+  done
+  echo "  ✅ Ingress IP: $INGRESS_IP"
 
-  PROXY_IP=$(kubectl get svc proxy -n ecommerce \
-    -o jsonpath='{.status.loadBalancer.ingress[0].ip}' 2>/dev/null || echo "pending")
-  FRONTEND_IP=$(kubectl get svc frontend -n ecommerce \
-    -o jsonpath='{.status.loadBalancer.ingress[0].ip}' 2>/dev/null || echo "pending")
+  echo "  Installing cert-manager..."
+  kubectl apply -f https://github.com/cert-manager/cert-manager/releases/latest/download/cert-manager.yaml >/dev/null
+  echo "  ⏳ Waiting for cert-manager..."
+  kubectl wait --for=condition=Available deployment/cert-manager -n cert-manager --timeout=120s >/dev/null
 
-  # FIX 3: No frontend rebuild needed — proxy IP is injected at runtime via K8s env var
+  echo "  Applying ClusterIssuer..."
+  kubectl apply -f "$K8S_DIR/gateway/cluster-issuer.yaml" >/dev/null
 
+  DOMAIN="${INGRESS_IP}.nip.io"
+  echo "  🚀 Your domain: $DOMAIN"
+
+  echo "  Applying Ingress with HTTPS..."
+  sed "s/DOMAIN_PLACEHOLDER/$DOMAIN/g" "$K8S_DIR/gateway/ingress.yaml" | kubectl apply -f - >/dev/null
+
+  echo "  Updating frontend with HTTPS API URL..."
+  kubectl set env deployment/frontend-deploy -n ecommerce PROXY_IP="https://${DOMAIN}/api" >/dev/null
+  kubectl rollout restart deployment/frontend-deploy -n ecommerce >/dev/null
+  
   echo ""
   echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
   echo "  ✅ Deployment Complete!"
   echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
-  echo "  🌐 Frontend:    http://${FRONTEND_IP}"
-  echo "  🔌 API Gateway: http://${PROXY_IP}:8000"
-  echo "  🐳 ACR:         $ACR_LOGIN_SERVER"
-  echo "  ☸️  AKS Cluster: $AKS_CLUSTER"
-  echo "  🏷️  Image tag:   $IMAGE_TAG"
+  echo "  🔒 HTTPS Website:   https://${DOMAIN}"
+  echo "  🔌 HTTPS API:       https://${DOMAIN}/api"
+  echo "  🐳 ACR:             $ACR_LOGIN_SERVER"
+  echo "  ☸️  AKS Cluster:     $AKS_CLUSTER"
+  echo "  🏷️  Image tag:       $IMAGE_TAG"
   echo ""
   echo "  Useful commands:"
-  echo "  kubectl get all -n ecommerce"
-  echo "  kubectl logs -n ecommerce deploy/customer-deploy"
-  echo "  kubectl logs -n ecommerce deploy/rabbitmq"
+  echo "  kubectl get certificate -n ecommerce"
+  echo "  kubectl get ingress -n ecommerce"
   echo ""
   echo "  To update app only:    ./setup.sh --app-only"
   echo "  To rebuild images:     ./setup.sh --images-only"
