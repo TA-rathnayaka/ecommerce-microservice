@@ -1,7 +1,7 @@
 import mongoose from 'mongoose';
-import fs from 'fs';
-import path from 'path';
-import { fileURLToPath } from 'url';
+import fs from 'node:fs';
+import path from 'node:path';
+import { fileURLToPath } from 'node:url';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -55,27 +55,24 @@ const seedData = JSON.parse(fs.readFileSync(path.join(__dirname, 'sampledata.jso
 // Use MONGODB_URI from env or default to nosql-db for execution inside docker
 const DB_URL = process.env.MONGODB_URI || 'mongodb://nosql-db/msytt_shopping';
 
-async function seed() {
-    try {
-        await mongoose.connect(DB_URL, {
-            useNewUrlParser: true,
-            useUnifiedTopology: true,
-        });
-        console.log('Connected to MongoDB');
+try {
+    await mongoose.connect(DB_URL, {
+        useNewUrlParser: true,
+        useUnifiedTopology: true,
+    });
+    console.log('Connected to MongoDB');
 
-        await CartModel.deleteMany({});
-        await OrderModel.deleteMany({});
-        console.log('Cleared existing carts and orders');
+    await CartModel.deleteMany({});
+    await OrderModel.deleteMany({});
+    console.log('Cleared existing carts and orders');
 
-        // Shopping sample data might be in a different format, usually it's empty initially
-        // or has some sample carts. We'll skip insertion if it's not clearly defined.
-        console.log('Shopping database cleared. Skipping insertion as sample data format is generic.');
+    // Shopping sample data might be in a different format, usually it's empty initially
+    // or has some sample carts. We'll skip insertion if it's not clearly defined.
+    console.log('Shopping database cleared. Skipping insertion as sample data format is generic.');
 
-        process.exit(0);
-    } catch (error) {
-        console.error('Error seeding database:', error);
-        process.exit(1);
-    }
+    await mongoose.connection.close();
+    process.exit(0);
+} catch (error) {
+    console.error('Error seeding database:', error);
+    process.exit(1);
 }
-
-seed();

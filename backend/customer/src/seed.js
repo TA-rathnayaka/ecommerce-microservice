@@ -1,7 +1,7 @@
 import mongoose from 'mongoose';
-import fs from 'fs';
-import path from 'path';
-import { fileURLToPath } from 'url';
+import fs from 'node:fs';
+import path from 'node:path';
+import { fileURLToPath } from 'node:url';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -59,31 +59,27 @@ const seedData = JSON.parse(fs.readFileSync(path.join(__dirname, 'sampledata.jso
 // Use MONGODB_URI from env or default to nosql-db for execution inside docker
 const DB_URL = process.env.MONGODB_URI || 'mongodb://nosql-db/msytt_customer';
 
-async function seed() {
-    try {
-        await mongoose.connect(DB_URL, {
-            useNewUrlParser: true,
-            useUnifiedTopology: true,
-        });
-        console.log('Connected to MongoDB');
+try {
+    await mongoose.connect(DB_URL, {
+        useNewUrlParser: true,
+        useUnifiedTopology: true,
+    });
+    console.log('Connected to MongoDB');
 
-        await CustomerModel.deleteMany({});
-        await AddressModel.deleteMany({});
-        console.log('Cleared existing customers and addresses');
+    await CustomerModel.deleteMany({});
+    await AddressModel.deleteMany({});
+    console.log('Cleared existing customers and addresses');
 
-
-        if (Array.isArray(seedData)) {
-            await CustomerModel.insertMany(seedData);
-            console.log('Inserted seed customers');
-        } else {
-            console.log('Seed data is not an array, skipping insertion');
-        }
-
-        process.exit(0);
-    } catch (error) {
-        console.error('Error seeding database:', error);
-        process.exit(1);
+    if (Array.isArray(seedData)) {
+        await CustomerModel.insertMany(seedData);
+        console.log('Inserted seed customers');
+    } else {
+        console.log('Seed data is not an array, skipping insertion');
     }
-}
 
-seed();
+    await mongoose.connection.close();
+    process.exit(0);
+} catch (error) {
+    console.error('Error seeding database:', error);
+    process.exit(1);
+}

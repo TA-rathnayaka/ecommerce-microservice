@@ -1,4 +1,3 @@
-import mongoose from 'mongoose';
 import { ProductModel } from '../models/index.js';
 
 //Dealing with data base operations

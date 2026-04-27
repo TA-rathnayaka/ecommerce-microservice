@@ -2,7 +2,7 @@ import CustomerService from '../services/customer-service.js';
 import UserAuth from './middlewares/auth.js';
 import { SubscribeMessage } from '../utils/index.js';
 
-export default (app, channel) => {
+export default function CustomerApi(app, channel) {
 
   const service = new CustomerService();
   SubscribeMessage(channel, service);

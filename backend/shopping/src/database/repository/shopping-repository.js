@@ -1,4 +1,3 @@
-import mongoose from 'mongoose';
 import { OrderModel, CartModel } from '../models/index.js';
 import { v4 as uuidv4 } from 'uuid';
 
@@ -27,7 +26,6 @@ class ShoppingRepository {
 
     async AddCartItem(customerId,item,qty,isRemove){
  
-            // return await CartModel.deleteMany();
  
             const cart = await CartModel.findOne({ customerId: customerId })
 
@@ -87,8 +85,8 @@ class ShoppingRepository {
         }
 
         let amount = 0;
-        cart.items.map(item => {
-            amount += parseInt(item.product.price) * parseInt(item.unit);
+        cart.items.forEach(item => {
+            amount += Number(item.product.price) * Number.parseInt(item.unit, 10);
         });
 
         const orderId = uuidv4();

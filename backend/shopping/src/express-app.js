@@ -1,8 +1,8 @@
 // express.js (shopping service setup)
 import express from 'express';
 import cors from 'cors';
-import path from 'path';
-import { fileURLToPath } from 'url';
+import path from 'node:path';
+import { fileURLToPath } from 'node:url';
 import { shopping } from './api/index.js';
 // fixed: removed unused appEvents import
 import { CreateChannel } from './utils/index.js';

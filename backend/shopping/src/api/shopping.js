@@ -5,7 +5,7 @@ import { BadRequestError } from '../utils/app-errors.js';
 import UserAuth from './middlewares/auth.js';
 import { CUSTOMER_SERVICE } from '../config/index.js';
 
-export default (app, channel) => {
+export default function ShoppingApi(app, channel) {
   const service = new ShoppingService();
   SubscribeMessage(channel, service);
 
@@ -57,9 +57,6 @@ export default (app, channel) => {
   });
 
   app.get('/cart', UserAuth, async (req, res, next) => {
-    console.log("req.body:", req.body);
-    console.log("req.user:", req.user);
-    console.log("auth header:", req.headers.authorization);
     try {
       const { _id } = req.user;
       const { data } = await service.GetCart({ _id });

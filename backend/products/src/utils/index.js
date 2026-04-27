@@ -76,7 +76,7 @@ export const CreateChannel = async () => {
 
 export const PublishMessage = (channel, service, msg) => {
   channel.publish(EXCHANGE_NAME, service, Buffer.from(msg));
-  console.log('Sent: ', msg);
+  // Removed logging of raw message to prevent log injection
 };
 
 // fixed: removed PublishCustomerEvent and PublishShoppingEvent entirely

@@ -1,8 +1,8 @@
 import express from 'express';
 import cors from 'cors';
-import path from 'path';
-import { fileURLToPath } from 'url';
-import { customer, appEvents } from './api/index.js';
+import path from 'node:path';
+import { fileURLToPath } from 'node:url';
+import { customer } from './api/index.js';
 import { CreateChannel } from './utils/index.js';
 
 const __filename = fileURLToPath(import.meta.url);

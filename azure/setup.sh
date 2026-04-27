@@ -14,11 +14,12 @@ cd "$(cd "$SCRIPT_DIR/.." && pwd)"
 ROOT_DIR="$(pwd)"
 
 IMAGE_TAG=$(git rev-parse --short HEAD 2>/dev/null || echo "latest")
+SEPARATOR="━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
 
-echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+echo "$SEPARATOR"
 echo "  🚀 Ecommerce Microservice — Azure AKS Deployment"
 echo "  Mode: $MODE | Image tag: $IMAGE_TAG"
-echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+echo "$SEPARATOR"
 
 # ─── Azure login ────────────────────────────────────────────────────────────
 echo ""
@@ -129,9 +130,9 @@ if [[ "$MODE" == "full" || "$MODE" == "--app-only" ]]; then
   
   echo "  ⏳ Waiting for Ingress IP (this takes 2-3 mins)..."
   INGRESS_IP=""
-  while [ -z "$INGRESS_IP" ] || [ "$INGRESS_IP" == "pending" ]; do
+  while [[ -z "$INGRESS_IP" || "$INGRESS_IP" == "pending" ]]; do
     INGRESS_IP=$(kubectl get svc -n ingress-nginx ingress-nginx-controller -o jsonpath='{.status.loadBalancer.ingress[0].ip}' 2>/dev/null || echo "pending")
-    [ "$INGRESS_IP" == "pending" ] && sleep 10
+    [[ "$INGRESS_IP" == "pending" ]] && sleep 10
   done
   echo "  ✅ Ingress IP: $INGRESS_IP"
 
@@ -154,9 +155,9 @@ if [[ "$MODE" == "full" || "$MODE" == "--app-only" ]]; then
   kubectl rollout restart deployment/frontend-deploy -n ecommerce >/dev/null
   
   echo ""
-  echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+  echo "$SEPARATOR"
   echo "  ✅ Deployment Complete!"
-  echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+  echo "$SEPARATOR"
   echo "  🔒 HTTPS Website:   https://${DOMAIN}"
   echo "  🔌 HTTPS API:       https://${DOMAIN}/api"
   echo "  🐳 ACR:             $ACR_LOGIN_SERVER"

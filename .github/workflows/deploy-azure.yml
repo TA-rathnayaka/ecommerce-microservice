@@ -21,7 +21,6 @@ env:
   FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
 
 permissions:
-  id-token: write
   contents: read
 
 jobs:
@@ -30,6 +29,9 @@ jobs:
   # ──────────────────────────────────────────────────────────────────────────
   sonarqube:
     runs-on: ubuntu-latest
+    permissions:
+      id-token: write
+      contents: read
     strategy:
       matrix:
         service: [customer, products, shopping, proxy, frontend]
@@ -56,6 +58,9 @@ jobs:
   # ──────────────────────────────────────────────────────────────────────────
   build:
     runs-on: ubuntu-latest
+    permissions:
+      id-token: write
+      contents: read
     if: ${{ github.event.inputs.deploy_mode != '--app-only' }}
     strategy:
       matrix:
@@ -112,6 +117,9 @@ jobs:
   # ──────────────────────────────────────────────────────────────────────────
   terraform:
     runs-on: ubuntu-latest
+    permissions:
+      id-token: write
+      contents: read
     needs: build
     if: ${{ github.event_name == 'workflow_dispatch' && github.event.inputs.skip_terraform == 'false' }}
     defaults:
@@ -165,6 +173,9 @@ jobs:
   # ──────────────────────────────────────────────────────────────────────────
   infra_prep:
     runs-on: ubuntu-latest
+    permissions:
+      id-token: write
+      contents: read
     needs: [build, terraform]
     if: ${{ always() && github.event.inputs.deploy_mode != '--images-only' }}
     steps:
@@ -192,6 +203,9 @@ jobs:
   # ──────────────────────────────────────────────────────────────────────────
   deploy_services:
     runs-on: ubuntu-latest
+    permissions:
+      id-token: write
+      contents: read
     needs: [infra_prep, build, terraform]
     strategy:
       matrix:
@@ -236,6 +250,9 @@ jobs:
   # ──────────────────────────────────────────────────────────────────────────
   ingress_final:
     runs-on: ubuntu-latest
+    permissions:
+      id-token: write
+      contents: read
     needs: [deploy_services, terraform]
     outputs:
       domain: ${{ steps.ingress.outputs.domain }}

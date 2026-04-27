@@ -50,10 +50,10 @@ export function Footer() {
           <div>
             <h4 className="mb-6 font-display text-xl font-bold text-ink">Our services</h4>
             <ul className="space-y-4 text-gray-500">
-              <li><a href="#" className="transition hover:text-ink">Pricing</a></li>
-              <li><a href="#" className="transition hover:text-ink">Tracking</a></li>
-              <li><a href="#" className="transition hover:text-ink">Report a Bug</a></li>
-              <li><a href="#" className="transition hover:text-ink">Terms of service</a></li>
+              <li><Link to="/" className="transition hover:text-ink">Pricing</Link></li>
+              <li><Link to="/" className="transition hover:text-ink">Tracking</Link></li>
+              <li><Link to="/" className="transition hover:text-ink">Report a Bug</Link></li>
+              <li><Link to="/" className="transition hover:text-ink">Terms of service</Link></li>
             </ul>
           </div>
 
@@ -61,9 +61,9 @@ export function Footer() {
           <div>
             <h4 className="mb-6 font-display text-xl font-bold text-ink">Our Company</h4>
             <ul className="space-y-4 text-gray-500">
-              <li><a href="#" className="transition hover:text-ink">Reporting</a></li>
-              <li><a href="#" className="transition hover:text-ink">Get in Touch</a></li>
-              <li><a href="#" className="transition hover:text-ink">Management</a></li>
+              <li><Link to="/" className="transition hover:text-ink">Reporting</Link></li>
+              <li><Link to="/" className="transition hover:text-ink">Get in Touch</Link></li>
+              <li><Link to="/" className="transition hover:text-ink">Management</Link></li>
             </ul>
           </div>
 

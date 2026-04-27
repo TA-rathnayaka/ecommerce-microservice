@@ -1,4 +1,3 @@
-import mongoose from 'mongoose';
 import { CustomerModel, AddressModel } from '../models/index.js';
 
 //Dealing with data base operations
@@ -40,18 +39,13 @@ class CustomerRepository {
     }
 
     async FindCustomer({ email }){
-        const existingCustomer = await CustomerModel.findOne({ email: email });
+        // Ensure email is a string to prevent NoSQL injection
+        const existingCustomer = await CustomerModel.findOne({ email: String(email) });
         return existingCustomer;
     }
 
     async FindCustomerById({ id }){
-
         const existingCustomer = await CustomerModel.findById(id).populate('address');
-        // existingCustomer.cart = [];
-        // existingCustomer.orders = [];
-        // existingCustomer.wishlist = [];
-
-        // await existingCustomer.save();
         return existingCustomer;
     }
 

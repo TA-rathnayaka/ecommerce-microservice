@@ -5,7 +5,7 @@ import { PublishMessage } from '../utils/index.js';
 import { BadRequestError } from '../utils/app-errors.js';
 import UserAuth from './middlewares/auth.js';
 
-export default (app, channel) => {
+export default function ProductsApi(app, channel) {
   const service = new ProductService();
 
   app.get('/whoami', (req, res) => {
