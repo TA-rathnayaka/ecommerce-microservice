@@ -1,0 +1,13 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: shopping-config
+  namespace: ecommerce
+data:
+  PORT: "8003"
+  MONGO_HOST: "shopping-db"
+  MONGO_PORT: "27017"
+  DB_NAME: "msytt_shopping"
+  EXCHANGE_NAME: "ONLINE_STORE"
+  MSG_QUEUE_URL: "amqp://rabbitmq:5672"
+  NODE_ENV: "prod"

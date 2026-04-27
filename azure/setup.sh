@@ -1,114 +1,185 @@
 #!/bin/bash
 # ============================================================================
-# Azure Initial Setup Script (Terraform)
-# Run this ONCE to create the foundational Azure resources
+# Full deployment: Terraform (AKS infra) + Docker (build/push) + kubectl (app)
 # ============================================================================
-# Prerequisites: az cli, terraform, docker
-# Usage: chmod +x azure/setup.sh && ./azure/setup.sh
+# Prerequisites: az cli, terraform, docker, kubectl
+# Usage:
+#   chmod +x setup.sh && ./setup.sh          # Full deploy
+#   ./setup.sh --app-only                    # Re-deploy K8s manifests only
+#   ./setup.sh --images-only                 # Rebuild & push images only
 # ============================================================================
 
 set -e
-
-# ─── Configuration ──────────────────────────────────────────────────────────
-RESOURCE_GROUP="rg-ecommerce"
-LOCATION="southeastasia"           # Change to your preferred region
-ACR_NAME="ecommerceacr$(date +%s | tail -c 6)"  # Must be globally unique
-COSMOS_ACCOUNT_NAME="cosmos-ecommerce-$(date +%s | tail -c 6)"
-APP_SECRET="ecommerce_microservice_secret_key_2024"
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+TF_DIR="$SCRIPT_DIR"
+K8S_DIR="$(cd "$SCRIPT_DIR/.." && pwd)/k8s"
+MODE="${1:-full}"
+cd "$(cd "$SCRIPT_DIR/.." && pwd)"
+ROOT_DIR="$(pwd)"
 
 echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
-echo "  🚀 Azure Ecommerce Microservice Setup (Terraform)"
+echo "  🚀 Ecommerce Microservice — Azure AKS Deployment"
+echo "  Mode: $MODE"
 echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
 
-# ─── Step 1: Login to Azure ────────────────────────────────────────────────
+# ─── Azure login ────────────────────────────────────────────────────────────
 echo ""
-echo "🔑 Step 1: Checking Azure login..."
+echo "🔑 Checking Azure login..."
 az account show > /dev/null 2>&1 || az login
 
-# ─── Step 2: Generate terraform.tfvars ─────────────────────────────────────
-echo ""
-echo "📝 Step 2: Generating terraform.tfvars..."
-cat > azure/terraform.tfvars <<EOF
-location               = "$LOCATION"
-environment_name       = "ecommerce"
-resource_group_name    = "$RESOURCE_GROUP"
-acr_name               = "$ACR_NAME"
-cosmos_db_account_name = "$COSMOS_ACCOUNT_NAME"
-mongodb_connection_string = ""
-app_secret             = "$APP_SECRET"
-image_tag              = "latest"
-EOF
-echo "  Generated azure/terraform.tfvars"
+# ─── Step 1: Terraform — provision AKS + ACR ────────────────────────────────
+if [[ "$MODE" == "full" ]]; then
+  echo ""
+  echo "☁️  Step 1: Provisioning infrastructure with Terraform..."
 
-# ─── Step 3: Terraform Init & Apply (infra only, no container apps yet) ────
-echo ""
-echo "☁️  Step 3: Provisioning Azure infrastructure with Terraform..."
-cd azure
-terraform init
-terraform apply -auto-approve -var-file="terraform.tfvars"
+  if [ ! -f "$TF_DIR/terraform.tfvars" ]; then
+    echo "❌ ERROR: $TF_DIR/terraform.tfvars not found."
+    echo "   Copy the example: cp azure/terraform.tfvars.example azure/terraform.tfvars"
+    echo "   Then fill in your values and re-run."
+    exit 1
+  fi
 
-# Capture outputs
+  cd "$TF_DIR"
+  terraform init -upgrade
+  terraform apply -auto-approve -var-file="terraform.tfvars"
+  cd "$ROOT_DIR"
+  echo "  ✅ Infrastructure ready"
+fi
+
+# ─── Capture Terraform outputs ──────────────────────────────────────────────
+echo ""
+echo "📤 Reading Terraform outputs..."
+cd "$TF_DIR"
 ACR_LOGIN_SERVER=$(terraform output -raw acr_login_server)
-echo ""
-echo "  ✅ Infrastructure provisioned"
+ACR_NAME=$(terraform output -raw acr_name)
+AKS_CLUSTER=$(terraform output -raw aks_cluster_name)
+RESOURCE_GROUP=$(terraform output -raw resource_group_name)
+cd "$ROOT_DIR"
 echo "  ACR: $ACR_LOGIN_SERVER"
+echo "  AKS: $AKS_CLUSTER"
 
-cd ..
+# ─── Step 2: Build & push Docker images ─────────────────────────────────────
+if [[ "$MODE" == "full" || "$MODE" == "--images-only" ]]; then
+  echo ""
+  echo "🔨 Step 2: Building and pushing Docker images..."
+  az acr login --name "$ACR_NAME"
 
-# ─── Step 4: Build & Push Docker images ────────────────────────────────────
+  echo "  → customer"
+  docker build --platform linux/amd64 -t "${ACR_LOGIN_SERVER}/ecommerce/customer:latest" ./backend/customer
+  docker push "${ACR_LOGIN_SERVER}/ecommerce/customer:latest"
+
+  echo "  → products"
+  docker build --platform linux/amd64 -t "${ACR_LOGIN_SERVER}/ecommerce/products:latest" ./backend/products
+  docker push "${ACR_LOGIN_SERVER}/ecommerce/products:latest"
+
+  echo "  → shopping"
+  docker build --platform linux/amd64 -t "${ACR_LOGIN_SERVER}/ecommerce/shopping:latest" ./backend/shopping
+  docker push "${ACR_LOGIN_SERVER}/ecommerce/shopping:latest"
+
+  echo "  → proxy"
+  docker build --platform linux/amd64 -f ./backend/proxy/Dockerfile.prod \
+    -t "${ACR_LOGIN_SERVER}/ecommerce/proxy:latest" ./backend/proxy
+  docker push "${ACR_LOGIN_SERVER}/ecommerce/proxy:latest"
+
+  echo "  → frontend"
+  # We get the proxy external IP after kubectl apply, but build with a placeholder first
+  docker build --platform linux/amd64 \
+    --build-arg REACT_APP_API_BASE_URL="http://PROXY_IP:8000" \
+    -t "${ACR_LOGIN_SERVER}/ecommerce/frontend:latest" ./frontend
+  docker push "${ACR_LOGIN_SERVER}/ecommerce/frontend:latest"
+
+  echo "  ✅ Images pushed"
+fi
+
+# ─── Step 3: Update K8s manifests with real ACR name ────────────────────────
 echo ""
-echo "🔨 Step 4: Building and pushing Docker images..."
+echo "📝 Step 3: Patching image names in K8s manifests..."
+# We replace 'ecommerce/' with the full ACR path
+find "$K8S_DIR" -name "*.yaml" | xargs sed -i '' "s|ecommerce/|$ACR_LOGIN_SERVER/ecommerce/|g"
+echo "  ✅ Image names updated"
 
-# Login to ACR
-az acr login --name $ACR_NAME
-
-echo "  Building customer service..."
-docker build -t ${ACR_LOGIN_SERVER}/ecommerce/customer:latest ./backend/customer
-docker push ${ACR_LOGIN_SERVER}/ecommerce/customer:latest
-
-echo "  Building products service..."
-docker build -t ${ACR_LOGIN_SERVER}/ecommerce/products:latest ./backend/products
-docker push ${ACR_LOGIN_SERVER}/ecommerce/products:latest
-
-echo "  Building shopping service..."
-docker build -t ${ACR_LOGIN_SERVER}/ecommerce/shopping:latest ./backend/shopping
-docker push ${ACR_LOGIN_SERVER}/ecommerce/shopping:latest
-
-echo "  Building proxy..."
-docker build -f ./backend/proxy/Dockerfile.prod -t ${ACR_LOGIN_SERVER}/ecommerce/proxy:latest ./backend/proxy
-docker push ${ACR_LOGIN_SERVER}/ecommerce/proxy:latest
-
-echo "  Building frontend (initial build, will need rebuild after proxy URL is known)..."
-docker build \
-  --build-arg REACT_APP_API_BASE_URL="https://TBD-PROXY-URL" \
-  -t ${ACR_LOGIN_SERVER}/ecommerce/frontend:latest ./frontend
-docker push ${ACR_LOGIN_SERVER}/ecommerce/frontend:latest
-
-# ─── Step 5: Get deployment outputs ────────────────────────────────────────
+# ─── Step 4: Configure kubectl ──────────────────────────────────────────────
 echo ""
-echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
-echo "  ✅ Deployment Complete!"
-echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+echo "⚙️  Step 4: Configuring kubectl..."
+az aks get-credentials \
+  --resource-group "$RESOURCE_GROUP" \
+  --name "$AKS_CLUSTER" \
+  --overwrite-existing
+echo "  ✅ kubectl configured"
 
-cd azure
-FRONTEND_URL=$(terraform output -raw frontend_url 2>/dev/null || echo "pending...")
-API_URL=$(terraform output -raw api_gateway_url 2>/dev/null || echo "pending...")
-cd ..
+# ─── Step 5: Deploy to Kubernetes ───────────────────────────────────────────
+if [[ "$MODE" == "full" || "$MODE" == "--app-only" ]]; then
+  echo ""
+  echo "🚢 Step 5: Deploying to Kubernetes..."
 
-echo ""
-echo "  🌐 Frontend URL:    $FRONTEND_URL"
-echo "  🔌 API Gateway URL: $API_URL"
-echo "  🐳 ACR Name:        $ACR_NAME"
-echo "  🗄️  Cosmos DB:       $COSMOS_ACCOUNT_NAME"
-echo "  📦 Resource Group:  $RESOURCE_GROUP"
-echo ""
-echo "  ⚠️  IMPORTANT: Rebuild the frontend with the correct API URL:"
-echo "  docker build --build-arg REACT_APP_API_BASE_URL=$API_URL \\"
-echo "    -t ${ACR_LOGIN_SERVER}/ecommerce/frontend:latest ./frontend"
-echo "  docker push ${ACR_LOGIN_SERVER}/ecommerce/frontend:latest"
-echo "  az containerapp update --name ca-frontend --resource-group $RESOURCE_GROUP \\"
-echo "    --image ${ACR_LOGIN_SERVER}/ecommerce/frontend:latest"
-echo ""
-echo "  📂 To manage infrastructure: cd azure && terraform plan"
-echo "  🗑️  To tear down:            cd azure && terraform destroy"
-echo ""
+  # Namespace first
+  kubectl apply -f "$K8S_DIR/namespace.yaml"
+
+  # StorageClass for Azure Disks
+  kubectl apply -f "$K8S_DIR/infrastructure/storage-class.yaml"
+
+  # Secrets & infrastructure
+  kubectl apply -f "$K8S_DIR/infrastructure/mongodb/"
+  kubectl apply -f "$K8S_DIR/infrastructure/rabbitmq/"
+
+  # Wait for infrastructure to be ready
+  echo "  ⏳ Waiting for MongoDB and RabbitMQ to be ready..."
+  kubectl rollout status deployment/products-db -n ecommerce --timeout=120s
+  kubectl rollout status deployment/customer-db -n ecommerce --timeout=120s
+  kubectl rollout status deployment/shopping-db -n ecommerce --timeout=120s
+  kubectl rollout status deployment/rabbitmq    -n ecommerce --timeout=120s
+
+  # Microservices
+  kubectl apply -f "$K8S_DIR/services/customer/"
+  kubectl apply -f "$K8S_DIR/services/products/"
+  kubectl apply -f "$K8S_DIR/services/shopping/"
+
+  # Gateway & frontend
+  kubectl apply -f "$K8S_DIR/gateway/"
+
+  echo "  ✅ All manifests applied"
+
+  # ─── Step 6: Get external IPs ─────────────────────────────────────────────
+  echo ""
+  echo "⏳ Step 6: Waiting for external IPs (may take 2-3 minutes)..."
+  kubectl wait --for=jsonpath='{.status.loadBalancer.ingress}' \
+    service/proxy -n ecommerce --timeout=180s 2>/dev/null || true
+  kubectl wait --for=jsonpath='{.status.loadBalancer.ingress}' \
+    service/frontend -n ecommerce --timeout=180s 2>/dev/null || true
+
+  PROXY_IP=$(kubectl get svc proxy -n ecommerce \
+    -o jsonpath='{.status.loadBalancer.ingress[0].ip}' 2>/dev/null || echo "pending")
+  FRONTEND_IP=$(kubectl get svc frontend -n ecommerce \
+    -o jsonpath='{.status.loadBalancer.ingress[0].ip}' 2>/dev/null || echo "pending")
+
+  # Rebuild frontend with real proxy IP if available
+  if [[ "$PROXY_IP" != "pending" ]]; then
+    echo ""
+    echo "🔄 Rebuilding frontend with real proxy IP..."
+    az acr login --name "$ACR_NAME"
+    docker build --platform linux/amd64 \
+      --build-arg REACT_APP_API_BASE_URL="http://${PROXY_IP}:8000" \
+      -t "${ACR_LOGIN_SERVER}/ecommerce/frontend:latest" ./frontend
+    docker push "${ACR_LOGIN_SERVER}/ecommerce/frontend:latest"
+    kubectl rollout restart deployment/frontend-deploy -n ecommerce
+    echo "  ✅ Frontend rebuilt with REACT_APP_API_BASE_URL=http://${PROXY_IP}:8000"
+  fi
+
+  echo ""
+  echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+  echo "  ✅ Deployment Complete!"
+  echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+  echo "  🌐 Frontend:    http://${FRONTEND_IP}"
+  echo "  🔌 API Gateway: http://${PROXY_IP}:8000"
+  echo "  🐳 ACR:         $ACR_LOGIN_SERVER"
+  echo "  ☸️  AKS Cluster: $AKS_CLUSTER"
+  echo ""
+  echo "  Useful commands:"
+  echo "  kubectl get all -n ecommerce"
+  echo "  kubectl logs -n ecommerce deploy/customer-deploy"
+  echo "  kubectl logs -n ecommerce deploy/rabbitmq"
+  echo ""
+  echo "  To update app only:    ./setup.sh --app-only"
+  echo "  To rebuild images:     ./setup.sh --images-only"
+  echo "  To tear down infra:    cd azure && terraform destroy"
+fi

@@ -21,18 +21,30 @@ variable "resource_group_name" {
 }
 
 variable "acr_name" {
-  description = "Azure Container Registry name (must be globally unique)"
+  description = "Azure Container Registry name (globally unique, 5-50 alphanumeric chars)"
   type        = string
 }
 
-variable "mongodb_connection_string" {
-  description = "Azure Cosmos DB for MongoDB connection string"
+variable "aks_cluster_name" {
+  description = "AKS cluster name"
   type        = string
-  sensitive   = true
+  default     = "aks-ecommerce"
+}
+
+variable "aks_node_count" {
+  description = "Number of nodes in the default AKS node pool"
+  type        = number
+  default     = 2
+}
+
+variable "aks_node_vm_size" {
+  description = "VM size for AKS nodes"
+  type        = string
+  default     = "Standard_B2s_v2"
 }
 
 variable "app_secret" {
-  description = "Application secret for JWT signing"
+  description = "JWT signing secret shared across all microservices"
   type        = string
   sensitive   = true
 }
@@ -41,10 +53,4 @@ variable "image_tag" {
   description = "Container image tag to deploy"
   type        = string
   default     = "latest"
-}
-
-variable "cosmos_db_account_name" {
-  description = "Azure Cosmos DB account name (must be globally unique)"
-  type        = string
-  default     = ""
 }

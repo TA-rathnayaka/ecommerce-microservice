@@ -8,32 +8,27 @@ output "resource_group_name" {
 }
 
 output "acr_login_server" {
-  description = "ACR login server URL"
+  description = "ACR login server URL — prefix all image names with this"
   value       = azurerm_container_registry.acr.login_server
 }
 
-output "acr_admin_username" {
-  description = "ACR admin username"
-  value       = azurerm_container_registry.acr.admin_username
+output "acr_name" {
+  description = "ACR name (used for az acr login)"
+  value       = azurerm_container_registry.acr.name
 }
 
-output "cosmos_db_connection_string" {
-  description = "Cosmos DB primary MongoDB connection string"
-  value       = azurerm_cosmosdb_account.mongodb.primary_mongodb_connection_string
+output "aks_cluster_name" {
+  description = "AKS cluster name"
+  value       = azurerm_kubernetes_cluster.main.name
+}
+
+output "get_credentials_command" {
+  description = "Run this to configure kubectl after terraform apply"
+  value       = "az aks get-credentials --resource-group ${azurerm_resource_group.main.name} --name ${azurerm_kubernetes_cluster.main.name}"
+}
+
+output "kube_config" {
+  description = "Raw kubeconfig (sensitive)"
+  value       = azurerm_kubernetes_cluster.main.kube_config_raw
   sensitive   = true
-}
-
-output "frontend_url" {
-  description = "Frontend application URL"
-  value       = "https://${azurerm_container_app.frontend.ingress[0].fqdn}"
-}
-
-output "api_gateway_url" {
-  description = "API gateway (proxy) URL"
-  value       = "https://${azurerm_container_app.proxy.ingress[0].fqdn}"
-}
-
-output "container_app_environment_id" {
-  description = "Container Apps Environment ID"
-  value       = azurerm_container_app_environment.main.id
 }

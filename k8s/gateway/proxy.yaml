@@ -1,0 +1,42 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: proxy
+  namespace: ecommerce
+spec:
+  selector:
+    app: proxy
+  ports:
+    - protocol: TCP
+      port: 8000
+      targetPort: 8000
+  type: LoadBalancer
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: proxy-deploy
+  namespace: ecommerce
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: proxy
+  template:
+    metadata:
+      labels:
+        app: proxy
+    spec:
+      imagePullSecrets:
+        - name: acr-secret
+      containers:
+        - name: proxy
+          image: tharanga123acr.azurecr.io/tharanga123acr.azurecr.io/tharanga123acr.azurecr.io/ecommerce/proxy:latest
+          imagePullPolicy: IfNotPresent
+          ports:
+            - containerPort: 8000
+          livenessProbe:
+            tcpSocket:
+              port: 8000
+            initialDelaySeconds: 5
+            periodSeconds: 10

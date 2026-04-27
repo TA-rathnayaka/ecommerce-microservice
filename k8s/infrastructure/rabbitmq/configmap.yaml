@@ -1,0 +1,10 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: rabbitmq-config
+  namespace: ecommerce
+data:
+  # Custom RabbitMQ configuration can go here
+  rabbitmq.conf: |
+    # Example config
+    loopback_users.guest = false

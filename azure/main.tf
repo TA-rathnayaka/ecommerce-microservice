@@ -21,7 +21,7 @@ terraform {
   # Uncomment to use Azure Storage as remote backend
   # backend "azurerm" {
   #   resource_group_name  = "rg-terraform-state"
-  #   storage_account_name = "taborestateXXXXX"
+  #   storage_account_name = "tfstateXXXXX"
   #   container_name       = "tfstate"
   #   key                  = "ecommerce.tfstate"
   # }

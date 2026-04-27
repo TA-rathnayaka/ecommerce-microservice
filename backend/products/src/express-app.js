@@ -13,6 +13,10 @@ export default async (app) => {
   app.use(cors());
   app.use(express.static(__dirname + '/public'));
 
+  app.get('/health', (req, res) => {
+    return res.status(200).send('OK');
+  });
+
   const channel = await CreateChannel();
   products(app, channel);
 
