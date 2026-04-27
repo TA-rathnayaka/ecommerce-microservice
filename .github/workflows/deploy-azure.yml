@@ -14,6 +14,8 @@ env:
   AZURE_RESOURCE_GROUP: rg-ecommerce
   ACR_NAME: ${{ secrets.ACR_NAME }}
   TF_VERSION: "1.7.0"
+  # Force GitHub to use Node.js 24 to silence deprecation warnings
+  FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
 
 permissions:
   id-token: write
