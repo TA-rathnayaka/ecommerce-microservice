@@ -17,7 +17,7 @@ spec:
         - name: acr-secret
       containers:
         - name: products
-          image: tharanga123acr.azurecr.io/tharanga123acr.azurecr.io/tharanga123acr.azurecr.io/ecommerce/products:latest
+          image: tharanga123acr.azurecr.io/tharanga123acr.azurecr.io/tharanga123acr.azurecr.io/tharanga123acr.azurecr.io/tharanga123acr.azurecr.io/ecommerce/products:latest
           imagePullPolicy: IfNotPresent
           ports:
             - containerPort: 8002

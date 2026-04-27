@@ -17,9 +17,12 @@ MODE="${1:-full}"
 cd "$(cd "$SCRIPT_DIR/.." && pwd)"
 ROOT_DIR="$(pwd)"
 
+# FIX 3: Use git commit hash as image tag to avoid corrupted latest manifest
+IMAGE_TAG=$(git rev-parse --short HEAD 2>/dev/null || echo "latest")
+
 echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
 echo "  🚀 Ecommerce Microservice — Azure AKS Deployment"
-echo "  Mode: $MODE"
+echo "  Mode: $MODE | Image tag: $IMAGE_TAG"
 echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
 
 # ─── Azure login ────────────────────────────────────────────────────────────
@@ -58,6 +61,17 @@ cd "$ROOT_DIR"
 echo "  ACR: $ACR_LOGIN_SERVER"
 echo "  AKS: $AKS_CLUSTER"
 
+# ─── FIX 2: Attach ACR to AKS so auth never breaks ──────────────────────────
+if [[ "$MODE" == "full" ]]; then
+  echo ""
+  echo "🔗 Attaching ACR to AKS..."
+  az aks update \
+    --name "$AKS_CLUSTER" \
+    --resource-group "$RESOURCE_GROUP" \
+    --attach-acr "$ACR_NAME"
+  echo "  ✅ ACR attached"
+fi
+
 # ─── Step 2: Build & push Docker images ─────────────────────────────────────
 if [[ "$MODE" == "full" || "$MODE" == "--images-only" ]]; then
   echo ""
@@ -65,28 +79,26 @@ if [[ "$MODE" == "full" || "$MODE" == "--images-only" ]]; then
   az acr login --name "$ACR_NAME"
 
   echo "  → customer"
-  docker build --platform linux/amd64 -t "${ACR_LOGIN_SERVER}/ecommerce/customer:latest" ./backend/customer
-  docker push "${ACR_LOGIN_SERVER}/ecommerce/customer:latest"
+  docker build --platform linux/amd64 -t "${ACR_LOGIN_SERVER}/ecommerce/customer:${IMAGE_TAG}" ./backend/customer
+  docker push "${ACR_LOGIN_SERVER}/ecommerce/customer:${IMAGE_TAG}"
 
   echo "  → products"
-  docker build --platform linux/amd64 -t "${ACR_LOGIN_SERVER}/ecommerce/products:latest" ./backend/products
-  docker push "${ACR_LOGIN_SERVER}/ecommerce/products:latest"
+  docker build --platform linux/amd64 -t "${ACR_LOGIN_SERVER}/ecommerce/products:${IMAGE_TAG}" ./backend/products
+  docker push "${ACR_LOGIN_SERVER}/ecommerce/products:${IMAGE_TAG}"
 
   echo "  → shopping"
-  docker build --platform linux/amd64 -t "${ACR_LOGIN_SERVER}/ecommerce/shopping:latest" ./backend/shopping
-  docker push "${ACR_LOGIN_SERVER}/ecommerce/shopping:latest"
+  docker build --platform linux/amd64 -t "${ACR_LOGIN_SERVER}/ecommerce/shopping:${IMAGE_TAG}" ./backend/shopping
+  docker push "${ACR_LOGIN_SERVER}/ecommerce/shopping:${IMAGE_TAG}"
 
   echo "  → proxy"
   docker build --platform linux/amd64 -f ./backend/proxy/Dockerfile.prod \
-    -t "${ACR_LOGIN_SERVER}/ecommerce/proxy:latest" ./backend/proxy
-  docker push "${ACR_LOGIN_SERVER}/ecommerce/proxy:latest"
+    -t "${ACR_LOGIN_SERVER}/ecommerce/proxy:${IMAGE_TAG}" ./backend/proxy
+  docker push "${ACR_LOGIN_SERVER}/ecommerce/proxy:${IMAGE_TAG}"
 
-  echo "  → frontend"
-  # We get the proxy external IP after kubectl apply, but build with a placeholder first
+  echo "  → frontend (no build-arg needed — uses runtime config)"
   docker build --platform linux/amd64 \
-    --build-arg REACT_APP_API_BASE_URL="http://PROXY_IP:8000" \
-    -t "${ACR_LOGIN_SERVER}/ecommerce/frontend:latest" ./frontend
-  docker push "${ACR_LOGIN_SERVER}/ecommerce/frontend:latest"
+    -t "${ACR_LOGIN_SERVER}/ecommerce/frontend:${IMAGE_TAG}" ./frontend
+  docker push "${ACR_LOGIN_SERVER}/ecommerce/frontend:${IMAGE_TAG}"
 
   echo "  ✅ Images pushed"
 fi
@@ -94,8 +106,10 @@ fi
 # ─── Step 3: Update K8s manifests with real ACR name ────────────────────────
 echo ""
 echo "📝 Step 3: Patching image names in K8s manifests..."
-# We replace 'ecommerce/' with the full ACR path
-find "$K8S_DIR" -name "*.yaml" | xargs sed -i '' "s|ecommerce/|$ACR_LOGIN_SERVER/ecommerce/|g"
+# FIX 1: Match only image lines to prevent double-prefixing on re-runs
+find "$K8S_DIR" -name "*.yaml" | xargs sed -i '' "s|image: ecommerce/|image: $ACR_LOGIN_SERVER/ecommerce/|g"
+# Also patch image tags to use current IMAGE_TAG
+find "$K8S_DIR" -name "*.yaml" | xargs sed -i '' "s|/ecommerce/\(.*\):latest|/ecommerce/\1:${IMAGE_TAG}|g"
 echo "  ✅ Image names updated"
 
 # ─── Step 4: Configure kubectl ──────────────────────────────────────────────
@@ -152,18 +166,7 @@ if [[ "$MODE" == "full" || "$MODE" == "--app-only" ]]; then
   FRONTEND_IP=$(kubectl get svc frontend -n ecommerce \
     -o jsonpath='{.status.loadBalancer.ingress[0].ip}' 2>/dev/null || echo "pending")
 
-  # Rebuild frontend with real proxy IP if available
-  if [[ "$PROXY_IP" != "pending" ]]; then
-    echo ""
-    echo "🔄 Rebuilding frontend with real proxy IP..."
-    az acr login --name "$ACR_NAME"
-    docker build --platform linux/amd64 \
-      --build-arg REACT_APP_API_BASE_URL="http://${PROXY_IP}:8000" \
-      -t "${ACR_LOGIN_SERVER}/ecommerce/frontend:latest" ./frontend
-    docker push "${ACR_LOGIN_SERVER}/ecommerce/frontend:latest"
-    kubectl rollout restart deployment/frontend-deploy -n ecommerce
-    echo "  ✅ Frontend rebuilt with REACT_APP_API_BASE_URL=http://${PROXY_IP}:8000"
-  fi
+  # FIX 3: No frontend rebuild needed — proxy IP is injected at runtime via K8s env var
 
   echo ""
   echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
@@ -173,6 +176,7 @@ if [[ "$MODE" == "full" || "$MODE" == "--app-only" ]]; then
   echo "  🔌 API Gateway: http://${PROXY_IP}:8000"
   echo "  🐳 ACR:         $ACR_LOGIN_SERVER"
   echo "  ☸️  AKS Cluster: $AKS_CLUSTER"
+  echo "  🏷️  Image tag:   $IMAGE_TAG"
   echo ""
   echo "  Useful commands:"
   echo "  kubectl get all -n ecommerce"

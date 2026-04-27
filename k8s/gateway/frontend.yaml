@@ -27,14 +27,12 @@ spec:
       labels:
         app: frontend
     spec:
-      imagePullSecrets:
-        - name: acr-secret
       containers:
         - name: frontend
-          image: tharanga123acr.azurecr.io/tharanga123acr.azurecr.io/tharanga123acr.azurecr.io/ecommerce/frontend:latest
-          imagePullPolicy: IfNotPresent
+          image: tharanga123acr.azurecr.io/ecommerce/frontend:latest
+          imagePullPolicy: Always
           ports:
             - containerPort: 80
           env:
-            - name: REACT_APP_API_BASE_URL
-              value: "http://localhost:8000"
+            - name: PROXY_IP
+              value: "http://proxy.ecommerce.svc.cluster.local:8000"
