@@ -1,109 +1,209 @@
-# Ecommerce Microservices
+# Ecommerce Microservice Application
 
-Overview
---------
-This repository contains a small ecommerce microservices demo (customer, products, shopping) plus a frontend and local Mongo data directory. The services can be run locally for development or orchestrated with Docker Compose or Kubernetes.
+A modern, scalable ecommerce platform built with a microservices architecture using Node.js, Express, MongoDB, RabbitMQ, and React.
 
-Prerequisites
--------------
-- Node.js v16+ and npm
-- Docker and docker-compose
-- kubectl and a Kubernetes cluster (minikube / kind / cloud) for k8s deployment
+## 🚀 Architecture Overview
 
-Quick start — Docker Compose (development)
------------------------------------------
-1. From the repository root, build and start everything:
+```mermaid
+graph TD
+    Client[Browser/React] -->|Port 8000| Gateway[Nginx Proxy]
+    Gateway -->|/| Products[Products Service]
+    Gateway -->|/customer| Customer[Customer Service]
+    Gateway -->|/shopping| Shopping[Shopping Service]
+    
+    Products --- Broker[RabbitMQ]
+    Customer --- Broker
+    Shopping --- Broker
+    
+    Products --- DB[(MongoDB)]
+    Customer --- DB
+    Shopping --- DB
+```
 
+This application consists of several microservices that communicate asynchronously using **RabbitMQ** and are served through an **Nginx API Gateway**.
+
+- **Customer Service**: Handles authentication, user profiles, and address management.
+- **Product Service**: Manages the product catalog and inventory.
+- **Shopping Service**: Handles cart management, order processing, and transaction history.
+- **API Gateway**: Consolidates all services under a single port (8000) and handles CORS.
+- **Frontend**: A React-based web interface for consumers. Includes administrative features (e.g., product creation) accessible to authorized users.
+- **Message Broker**: Enables decoupled communication (e.g., notifying Customer service when a product is added to a wishlist).
+
+---
+
+## 🛠 Prerequisites
+
+Before you begin, ensure you have the following installed:
+- [Docker](https://www.docker.com/get-started)
+- [Docker Compose](https://docs.docker.com/compose/install/)
+- [Node.js](https://nodejs.org/) (v16+ recommended for local development)
+
+---
+
+## 🚦 Getting Started
+
+### Quick Start with Docker
+
+The easiest way to run the entire stack is using Docker Compose.
+
+#### Development Mode:
 ```bash
 docker-compose up --build
 ```
 
-2. Stop and remove containers:
-
+#### Production Mode (Simulated):
 ```bash
-docker-compose down
+docker-compose -f docker-compose.prod.yml up --build
 ```
 
-Run production compose
-----------------------
+### Accessing the Application:
+- **Frontend**: [http://localhost:3000](http://localhost:3000)
+- **API Gateway**: [http://localhost:8000](http://localhost:8000)
+- **RabbitMQ Management**: [http://localhost:15672](http://localhost:15672)
+
+---
+
+## 💻 Technology Stack
+
+- **Backend**: Node.js, Express.js
+- **Database**: MongoDB (NoSQL) with Mongoose ODM
+- **Messaging**: RabbitMQ (AMQP 0-9-1)
+- **Frontend**: React.js with Tailwind CSS
+- **DevOps**: Docker, Kubernetes (AKS), Terraform
+
+---
+
+## 📊 Database & Schemas
+
+Each microservice maintains its own isolated database to ensure data ownership and independent scaling.
+
+### Product Schema
+| Field | Type | Description |
+| :--- | :--- | :--- |
+| `name` | String | Product name |
+| `desc` | String | Detailed description |
+| `type` | String | Category (e.g., 'tools', 'clothing') |
+| `price` | Number | Unit price |
+| `unit` | Number | Stock quantity |
+
+### Customer Schema
+| Field | Type | Description |
+| :--- | :--- | :--- |
+| `email` | String | Unique user email |
+| `password` | String | Bcrypt-hashed password |
+| `address` | Array | List of user addresses |
+| `cart/wishlist`| Array | Stored items for persistence |
+
+---
+
+### Local Development
+
+If you want to run services individually for development:
+
+1. **Start Infrastructure Services:**
+   Run only the database and message broker:
+   ```bash
+   docker-compose up nosql-db rabbitmq
+   ```
+
+2. **Configure Environment Variables:**
+   Each service in `backend/` has a `.env.dev` file. Ensure the following variables are correctly set:
+   - `MONGODB_URI`: Connection string for MongoDB.
+   - `MSG_QUEUE_URL`: Connection string for RabbitMQ.
+   - `PORT`: Service-specific port.
+
+3. **Install Dependencies and Start Services:**
+   For each service (customer, products, shopping):
+   ```bash
+   cd backend/<service-name>
+   npm install
+   npm run dev
+   ```
+
+4. **Start the Frontend:**
+   ```bash
+   cd frontend
+   npm install
+   npm start
+   ```
+
+---
+
+## 📡 API Port Mapping
+
+| Component | Host Port | Internal Port | Protocol | Description |
+| :--- | :--- | :--- | :--- | :--- |
+| **Frontend** | 3000 | 80 | HTTP | React Web App |
+| **API Gateway** | 8000 | 8000 | HTTP | Entry point for all APIs |
+| **Customer Service** | 8001 | 8001 | HTTP | User & Auth Logic |
+| **Product Service** | 8002 | 8002 | HTTP | Catalog & Seed Scripts |
+| **Shopping Service** | 8003 | 8003 | HTTP | Orders & Cart |
+| **MongoDB** | 27018 | 27017 | TCP | Shared NoSQL Instance |
+| **RabbitMQ** | 5672 | 5672 | AMQP | Message Broker |
+
+---
+
+## 🔄 Event-Driven Communication
+
+The services use a **Direct Exchange** pattern in RabbitMQ to handle inter-service events:
+
+1. **ADD_TO_WISHLIST**: `Products` -> `Customer`
+2. **ADD_TO_CART**: `Products` -> `Customer` & `Shopping`
+3. **PLACE_ORDER**: `Shopping` -> `Customer`
+
+Messages are published to the `ONLINE_STORE` exchange.
+
+---
+
+## 🧪 Database Seeding
+
+To populate the database with initial product data:
+
 ```bash
-docker-compose -f docker-compose.prod.yml up --build -d
+# Using Docker
+docker exec -it products npm run seed
+
+# Using local Node (if DB is running)
+cd backend/products && npm run seed
 ```
 
-Run services individually (local development)
---------------------------------------------
-Backend services (customer, products, shopping) each include dev scripts using `nodemon`.
+---
 
-Example — customer service:
+## 🚢 Cloud Deployment (Azure AKS)
 
-```bash
-cd backend/customer
-npm install
-npm run dev
-```
+The repository includes a full automation suite for deploying to **Azure Kubernetes Service (AKS)**:
 
-Example — products service:
+1. **Infrastructure**: Terraform scripts in `azure/` to provision ACR and AKS.
+2. **Automation**: `azure/setup.sh` handles the entire pipeline:
+   - Azure Login & Terraform Apply.
+   - Docker Build & Push to ACR.
+   - Kubernetes manifest deployment.
+   - Ingress & HTTPS (Let's Encrypt) configuration.
 
-```bash
-cd backend/products
-npm install
-npm run dev
-```
+**To deploy:** `cd azure && ./setup.sh`
 
-Frontend:
+---
 
-```bash
-cd frontend
-npm install
-npm start
-```
+## 🎥 Project Demo Guide
 
-Database seeding
-----------------
-Each backend contains a `src/seed.js` to populate sample data. Example:
+For your submission video (max 20 mins), we recommend this flow:
+1. **Intro**: Project objective & architecture overview.
+2. **Setup**: Run `docker-compose up` and show services starting.
+3. **Seeding**: Run `docker exec -it products npm run seed`.
+4. **Features**: Demo user registration, adding products to cart, and placing an order.
+5. **Real-time Logs**: Show RabbitMQ messages being processed in the terminal.
+6. **Cloud**: Briefly show the K8s manifests and Azure setup scripts.
 
-```bash
-cd backend/customer
-node src/seed.js
+---
 
-cd ../products
-node src/seed.js
-```
+## 🔧 Troubleshooting
 
-Kubernetes (optional)
----------------------
-Apply the manifests in `k8s/` (ensure your kubectl context is set):
+- **RabbitMQ ECONNREFUSED**: Ensure the `rabbitmq` container is healthy before services start.
+- **MongoDB Auth**: In K8s, credentials are managed via `k8s/infrastructure/mongodb/secret.yaml`.
+- **CORS**: Route all requests through the Gateway (Port 8000).
 
-```bash
-kubectl apply -f k8s/namespace.yaml
-kubectl apply -f k8s/
-```
+---
 
-Building images manually
-------------------------
-You can build individual service images and push them to a registry or use them locally:
+## 📄 License
 
-```bash
-docker build -t ecommerce-customer:latest backend/customer
-docker build -t ecommerce-products:latest backend/products
-docker build -t ecommerce-frontend:latest frontend
-```
-
-Environment variables
----------------------
-Each service expects environment variables (Mongo URI, ports, secrets). Check each service's `src/config` folder or `.env` suggestions and create service-level `.env` files when running locally.
-
-Troubleshooting
----------------
-- View logs for compose: `docker-compose logs -f`
-- If ports are in use, update compose or service `PORT` env vars
-- If Mongo fails to start, remove the local `db/` mount in compose and retry (data files are present in `db/`)
-
-Where to look in the repo
--------------------------
-- Backend services: `backend/customer`, `backend/products`, `backend/shopping`
-- Frontend: `frontend`
-- Docker Compose manifests: `docker-compose.yml`, `docker-compose.prod.yml`
-- Kubernetes manifests: `k8s/`
-
-If you want, I can add more detailed per-service env examples, sample curl requests, or a Makefile to simplify common commands—tell me which.
+This project is licensed under the MIT License.
