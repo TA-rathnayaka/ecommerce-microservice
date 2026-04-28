@@ -32,9 +32,6 @@ jobs:
     permissions:
       id-token: write
       contents: read
-    strategy:
-      matrix:
-        service: [customer, products, shopping, proxy, frontend]
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
@@ -47,11 +44,6 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
-        with:
-          args: >
-            -Dsonar.projectKey=TA-rathnayaka_ecommerce-${{ matrix.service }}
-            -Dsonar.organization=TA-rathnayaka
-            -Dsonar.sources=${{ matrix.service == 'frontend' && './frontend' || format('./backend/{0}', matrix.service) }}
 
   # ──────────────────────────────────────────────────────────────────────────
   # Step 2: Parallel Builds
