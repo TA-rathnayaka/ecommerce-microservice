@@ -14,7 +14,6 @@ import { CartPage } from "./pages/CartPage";
 import { WishlistPage } from "./pages/WishlistPage";
 import { CreateProductPage } from "./pages/CreateProductPage";
 
-import { Footer } from "./components/Footer";
 
 function App() {
   return (

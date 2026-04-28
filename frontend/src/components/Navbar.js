@@ -4,6 +4,10 @@ import { useCart } from "../context/CartContext";
 
 import { useWishlist } from "../context/WishlistContext";
 
+const ActiveUnderline = () => (
+  <div className="absolute -bottom-1 left-1/2 h-0.5 w-4 -translate-x-1/2 rounded-full bg-[#FF6B35]" />
+);
+
 export function Navbar() {
   const { isAuthenticated, logout } = useAuth();
   const { itemCount } = useCart();
@@ -22,10 +26,6 @@ export function Navbar() {
     `relative py-1 text-base font-medium transition-all hover:text-ink ${
       isActive ? "text-ink font-bold" : "text-gray-400"
     }`;
-
-  const ActiveUnderline = () => (
-    <div className="absolute -bottom-1 left-1/2 h-0.5 w-4 -translate-x-1/2 rounded-full bg-[#FF6B35]" />
-  );
 
   return (
     <header className="w-full bg-white">
@@ -50,26 +50,26 @@ export function Navbar() {
         <div className="hidden items-center gap-10 md:flex">
           <NavLink to="/" end className={navLinkClass}>
             {({ isActive }) => (
-              <>
+              <span className="flex flex-col items-center">
                 Home
                 {isActive && <ActiveUnderline />}
-              </>
+              </span>
             )}
           </NavLink>
           <NavLink to="/category/fruits" className={navLinkClass}>
             {({ isActive }) => (
-              <>
+              <span className="flex flex-col items-center">
                 Catalog
                 {isActive && <ActiveUnderline />}
-              </>
+              </span>
             )}
           </NavLink>
           <NavLink to="/shop" className={navLinkClass}>
             {({ isActive }) => (
-              <>
+              <span className="flex flex-col items-center">
                 Shop
                 {isActive && <ActiveUnderline />}
-              </>
+              </span>
             )}
           </NavLink>
           
